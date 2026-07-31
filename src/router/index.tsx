@@ -1,0 +1,23 @@
+import { Routes, Route } from 'react-router-dom'
+import { DashboardLayout } from '../components/layout/DashboardLayout'
+import { HomePage } from '../features/home'
+import { PaymentsPage } from '../features/payments'
+import { UsersPage } from '../features/users'
+import { ChatPage } from '../features/chat'
+import { EventsPage } from '../features/events'
+import { AntiCheatPage } from '../features/anticheat'
+
+export function AppRouter() {
+  return (
+    <Routes>
+      <Route element={<DashboardLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/pagamentos" element={<PaymentsPage />} />
+        <Route path="/usuarios" element={<UsersPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/eventos" element={<EventsPage />} />
+        <Route path="/anti-cheat" element={<AntiCheatPage />} />
+      </Route>
+    </Routes>
+  )
+}

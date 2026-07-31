@@ -1,0 +1,108 @@
+import { useState } from 'react'
+import { Ticket, CreditCard, ShieldAlert, Flag, Download } from 'lucide-react'
+import { Card } from '../../components/ui/Card'
+import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
+import { RegionMap } from '../../components/charts/RegionMap'
+import { AnalyticsOverview } from './AnalyticsOverview'
+import { summaryCards, userStatusBreakdown, totalUsers, usersByRegion, recentPayments } from './mocks'
+
+const statIcons = [Ticket, CreditCard, ShieldAlert, Flag]
+
+const tabs = ['Visão geral', 'Análises', 'Relatórios', 'Notificações'] as const
+const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises']
+
+export function HomePage() {
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>(tabs[0])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ceilingWhite">Dashboard</h1>
+        <button className="flex items-center gap-2 rounded-md bg-ceilingWhite px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-white">
+          <Download size={14} />
+          Baixar relatório
+        </button>
+      </div>
+
+      <div className="inline-flex w-fit gap-1 rounded-lg bg-surface p-1">
+        {tabs.map((tab) => {
+          const isEnabled = enabledTabs.includes(tab)
+          const isActive = activeTab === tab
+          return (
+            <button
+              key={tab}
+              disabled={!isEnabled}
+              onClick={() => isEnabled && setActiveTab(tab)}
+              title={!isEnabled ? 'Em breve' : undefined}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-richBlack text-ceilingWhite'
+                  : isEnabled
+                    ? 'text-laurelLeaf hover:text-ceilingWhite'
+                    : 'cursor-not-allowed text-laurelLeaf/40'
+              }`}
+            >
+              {tab}
+            </button>
+          )
+        })}
+      </div>
+
+      {activeTab === 'Análises' ? (
+        <AnalyticsOverview />
+      ) : (
+        <>
+          <div className="grid grid-cols-4 gap-4">
+            {summaryCards.map((card, i) => {
+              const Icon = statIcons[i]
+              return (
+                <Card key={card.label} dark>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-laurelLeaf">{card.label}</p>
+                    <Icon size={16} className="text-laurelLeaf" />
+                  </div>
+                  <p className="mt-2 text-2xl font-semibold text-ceilingWhite">{card.value}</p>
+                  <p className="mt-1 text-xs text-pear">{card.trend}</p>
+                </Card>
+              )
+            })}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Card dark className="col-span-2">
+              <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por status</h2>
+              <UserStatusDonut data={userStatusBreakdown} total={totalUsers} dark />
+            </Card>
+
+            <Card dark>
+              <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Últimos pagamentos</h2>
+              <div className="flex flex-col gap-4">
+                {recentPayments.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold text-ceilingWhite">
+                        {p.initials}
+                      </div>
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-sm text-ceilingWhite">{p.name}</span>
+                        <span className="text-xs text-laurelLeaf">{p.gateway}</span>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-pear">
+                      +R$ {p.amount.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <Card dark>
+            <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por região</h2>
+            <RegionMap data={usersByRegion} dark />
+          </Card>
+        </>
+      )}
+    </div>
+  )
+}
