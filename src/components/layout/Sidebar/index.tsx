@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Home,
   CreditCard,
@@ -16,7 +16,14 @@ import { useAuth } from '../../../features/auth/AuthContext'
 export function Sidebar() {
   const openChatsCount = tickets.filter((t) => t.status !== 'resolved').length
   const { logout, userEmail } = useAuth()
+  const navigate = useNavigate()
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+
+  function handleLogout() {
+    logout()
+    setProfileMenuOpen(false)
+    navigate('/login', { replace: true })
+  }
 
   const navItems = [
     { to: '/', label: 'Home', icon: Home },
@@ -79,6 +86,7 @@ export function Sidebar() {
 
       <div className="relative mt-4">
         <button
+          type="button"
           onClick={() => setProfileMenuOpen((open) => !open)}
           className="flex w-full items-center gap-2 rounded-lg border border-white/5 px-3 py-2 transition-colors hover:bg-white/5"
         >
@@ -97,7 +105,8 @@ export function Sidebar() {
             <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
             <div className="absolute bottom-full left-0 z-50 mb-2 w-full rounded-lg border border-surfaceBorder bg-surface py-1 shadow-lg">
               <button
-                onClick={logout}
+                type="button"
+                onClick={handleLogout}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ceilingWhite transition-colors hover:bg-white/5"
               >
                 <LogOut size={14} />
