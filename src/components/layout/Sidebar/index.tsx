@@ -91,7 +91,7 @@ export function Sidebar() {
           className="flex w-full items-center gap-2 rounded-lg border border-white/5 px-3 py-2 transition-colors hover:bg-white/5"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/30 text-xs font-semibold text-ceilingWhite">
-            JG
+            Madah
           </div>
           <div className="flex flex-col items-start leading-tight">
             <span className="text-xs font-medium text-ceilingWhite">João Guilherme</span>
