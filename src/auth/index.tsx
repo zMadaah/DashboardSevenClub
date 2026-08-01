@@ -1,19 +1,29 @@
 import { FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
-import { useAuth } from '../../features/auth/AuthContext'
+import { useAuth } from './AuthContext'
 
 export function LoginPage() {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, isLoading, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-richBlack">
+        <p className="text-sm text-laurelLeaf">Carregando...</p>
+      </div>
+    )
+  }
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />
   }
+
+  // ...resto do componente sem mudanças
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()

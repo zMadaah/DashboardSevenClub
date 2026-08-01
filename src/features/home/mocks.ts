@@ -1,6 +1,5 @@
 import {
   SummaryCard,
-  UserStatusItem,
   RegionUserCount,
   RecentPayment,
   WeeklyActivityPoint,
@@ -9,6 +8,7 @@ import {
   DeviceShare,
 } from './types'
 
+// "Tickets abertos" não é um número independente — é a soma das 3 origens de ticket abaixo.
 const paymentFailuresToday = 3
 const antiCheatQueueCount = 7
 const recentReportsCount = 4
@@ -21,13 +21,8 @@ export const summaryCards: SummaryCard[] = [
   { label: 'Denúncias recentes', value: recentReportsCount, trend: 'estável esta semana' },
 ]
 
-export const userStatusBreakdown: UserStatusItem[] = [
-  { name: 'Free', value: 1240, color: '#96998C' },
-  { name: 'Assinantes', value: 860, color: '#BCFF00' },
-  { name: 'Cancelado', value: 130, color: '#DC2626' },
-]
-
-export const totalUsers = userStatusBreakdown.reduce((sum, item) => sum + item.value, 0)
+// userStatusBreakdown/totalUsers saíram daqui — agora vêm de verdade da API
+// via useSubscriptionSummary() (GET /users/subscription-summary).
 
 export const usersByRegion: RegionUserCount[] = [
   { region: 'Sudeste', users: 1120 },

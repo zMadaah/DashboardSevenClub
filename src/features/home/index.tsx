@@ -4,15 +4,19 @@ import { Card } from '../../components/ui/Card'
 import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
 import { RegionMap } from '../../components/charts/RegionMap'
 import { AnalyticsOverview } from './AnalyticsOverview'
-import { summaryCards, userStatusBreakdown, totalUsers, usersByRegion, recentPayments } from './mocks'
+import { NotificationsPage } from '../notifications'
+import { useSubscriptionSummary } from './useSubscriptionSummary'
+import { summaryCards, usersByRegion, recentPayments } from './mocks'
 
 const statIcons = [Ticket, CreditCard, ShieldAlert, Flag]
 
 const tabs = ['Visão geral', 'Análises', 'Relatórios', 'Notificações'] as const
-const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises']
+const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises', 'Notificações']
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>(tabs[0])
+  const { data: userStatusData, total: userStatusTotal, isLoading: statusLoading, error: statusError } =
+    useSubscriptionSummary()
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,6 +54,8 @@ export function HomePage() {
 
       {activeTab === 'Análises' ? (
         <AnalyticsOverview />
+      ) : activeTab === 'Notificações' ? (
+        <NotificationsPage />
       ) : (
         <>
           <div className="grid grid-cols-4 gap-4">
@@ -71,7 +77,13 @@ export function HomePage() {
           <div className="grid grid-cols-3 gap-4">
             <Card dark className="col-span-2">
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por status</h2>
-              <UserStatusDonut data={userStatusBreakdown} total={totalUsers} dark />
+              {statusLoading ? (
+                <p className="text-sm text-laurelLeaf">Carregando...</p>
+              ) : statusError ? (
+                <p className="text-sm text-red-400">Não foi possível carregar: {statusError}</p>
+              ) : (
+                <UserStatusDonut data={userStatusData} total={userStatusTotal} dark />
+              )}
             </Card>
 
             <Card dark>

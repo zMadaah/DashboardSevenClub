@@ -10,9 +10,9 @@ export function Header() {
           placeholder="Buscar usuário, ticket, transação..."
           className="w-full rounded-lg border border-surfaceBorder bg-surface py-2 pl-9 pr-12 text-sm text-ceilingWhite outline-none placeholder:text-laurelLeaf focus:border-pear"
         />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-surfaceBorder px-1.5 py-0.5 text-[10px] text-laurelLeaf">
+        {/* <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-surfaceBorder px-1.5 py-0.5 text-[10px] text-laurelLeaf">
           ⌘K
-        </span>
+        </span> */}
       </div>
 
       <div className="flex items-center gap-2">

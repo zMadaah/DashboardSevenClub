@@ -37,7 +37,7 @@ export function PaymentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-richBlack">Pagamentos</h1>
+        <h1 className="text-2xl font-semibold text-ceilingWhite">Pagamentos</h1>
         <p className="text-sm text-laurelLeaf">Transações e cobranças de assinaturas</p>
       </div>
 
@@ -48,8 +48,8 @@ export function PaymentsPage() {
             onClick={() => setActiveFilter(f.key)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeFilter === f.key
-                ? 'bg-richBlack text-ceilingWhite'
-                : 'border border-celeste bg-white text-richBlack hover:bg-ceilingWhite'
+                ? 'bg-pear text-richBlack'
+                : 'border border-surfaceBorder text-laurelLeaf hover:text-ceilingWhite'
             }`}
           >
             {f.label}
@@ -57,8 +57,8 @@ export function PaymentsPage() {
         ))}
       </div>
 
-      <Table>
-        <TableHead>
+      <Table dark>
+        <TableHead dark>
           <tr>
             <TableCell>Usuário</TableCell>
             <TableCell>Valor</TableCell>
@@ -69,7 +69,7 @@ export function PaymentsPage() {
         </TableHead>
         <tbody>
           {filtered.map((p) => (
-            <TableRow key={p.id}>
+            <TableRow key={p.id} dark>
               <TableCell>{p.user}</TableCell>
               <TableCell>R$ {p.amount.toFixed(2).replace('.', ',')}</TableCell>
               <TableCell>

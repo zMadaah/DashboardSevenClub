@@ -1,7 +1,11 @@
-import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table'
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
+import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
-import { events } from './mocks'
-import { EventStatus } from './types'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { CreateEventModal } from './CreateEventModal'
+import { events as initialEvents } from './mocks'
+import { CommunityEvent, EventStatus } from './types'
 
 const statusTone: Record<EventStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
   scheduled: 'neutral',
@@ -17,38 +21,86 @@ const statusLabel: Record<EventStatus, string> = {
   cancelled: 'Cancelado',
 }
 
+type StatusFilter = 'all' | EventStatus
+
+const filters: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'Todos' },
+  { key: 'scheduled', label: 'Agendado' },
+  { key: 'live', label: 'Ao vivo' },
+  { key: 'finished', label: 'Finalizado' },
+  { key: 'cancelled', label: 'Cancelado' },
+]
+
 export function EventsPage() {
+  const [events, setEvents] = useState<CommunityEvent[]>(initialEvents)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [modalOpen, setModalOpen] = useState(false)
+
+  const filtered =
+    statusFilter === 'all' ? events : events.filter((e) => e.status === statusFilter)
+
+  function handleCreate(event: CommunityEvent) {
+    setEvents((prev) => [event, ...prev])
+    setModalOpen(false)
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-richBlack">Evento</h1>
-        <button className="rounded-lg bg-pear px-4 py-2 text-sm font-medium text-richBlack">
+        <div>
+          <h1 className="text-xl font-semibold text-ceilingWhite">Evento</h1>
+          <p className="text-sm text-laurelLeaf">Eventos comunitários e desafios entre crews</p>
+        </div>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 rounded-md bg-pear px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-pear/90"
+        >
+          <Plus size={14} />
           Novo evento
         </button>
       </div>
 
-      <Table>
-        <TableHead>
-          <tr>
-            <TableCell>Nome</TableCell>
-            <TableCell>Data</TableCell>
-            <TableCell>Participantes</TableCell>
-            <TableCell>Status</TableCell>
-          </tr>
-        </TableHead>
-        <tbody>
-          {events.map((e) => (
-            <TableRow key={e.id}>
-              <TableCell>{e.name}</TableCell>
-              <TableCell>{e.date}</TableCell>
-              <TableCell>{e.participants}</TableCell>
-              <TableCell>
+      <div className="flex flex-wrap gap-2">
+        {filters.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setStatusFilter(f.key)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              statusFilter === f.key
+                ? 'bg-pear text-richBlack'
+                : 'border border-surfaceBorder text-laurelLeaf hover:text-ceilingWhite'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <Card dark>
+        <h2 className="mb-4 text-sm font-medium text-ceilingWhite">Histórico</h2>
+
+        {filtered.length === 0 ? (
+          <EmptyState message="Nenhum evento encontrado com esse filtro." />
+        ) : (
+          <div className="flex flex-col divide-y divide-white/5">
+            {filtered.map((e) => (
+              <div key={e.id} className="flex items-center gap-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ceilingWhite">{e.name}</p>
+                  <p className="truncate text-xs text-laurelLeaf">{e.location}</p>
+                </div>
+                <span className="w-24 shrink-0 text-xs text-laurelLeaf">
+                  {e.participants} pessoas
+                </span>
                 <Badge label={statusLabel[e.status]} tone={statusTone[e.status]} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+                <span className="w-40 shrink-0 text-right text-xs text-laurelLeaf">{e.date}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {modalOpen && <CreateEventModal onClose={() => setModalOpen(false)} onCreate={handleCreate} />}
     </div>
   )
 }
