@@ -10,17 +10,13 @@ import {
   ChevronsUpDown,
   LogOut,
 } from 'lucide-react'
-import { tickets } from '../../../features/chat/mocks'
+import { useTickets } from '../../../features/chat/useTickets'
 import { useAuth } from '../../../auth/AuthContext'
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  const first = parts[0]?.[0] ?? ''
-  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : ''
-  return (first + last).toUpperCase() || '?'
-}
+import { getInitials } from '../../../lib/format'
 
 export function Sidebar() {
+  const { tickets } = useTickets()
   const openChatsCount = tickets.filter((t) => t.status !== 'resolved').length
   const { logout, user } = useAuth()
   const navigate = useNavigate()
@@ -44,10 +40,14 @@ export function Sidebar() {
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-richBlack px-3 py-4">
       <div className="mb-6 flex items-center gap-2 rounded-lg px-2 py-2">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
+          7C
+        </div>
         <div className="flex flex-col leading-tight">
           <span className="text-sm font-semibold text-ceilingWhite">Seven Club</span>
           <span className="text-xs text-laurelLeaf">Suporte</span>
         </div>
+        <ChevronsUpDown size={14} className="ml-auto text-laurelLeaf" />
       </div>
 
       <p className="mb-2 px-3 text-[10px] font-medium uppercase tracking-wider text-laurelLeaf/70">

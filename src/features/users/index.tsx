@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Search, ChevronDown, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react'
 import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { EditUserModal } from './EditUserModal'
-import { users as initialUsers } from './mocks'
+import { useUsers } from './useUsers'
+import { updateUser, updateUserStatus } from './api'
+import { useAuth } from '../../auth/AuthContext'
 import { SupportUser } from './types'
 import { UserStatus, UserRole } from '../../types'
 
@@ -47,7 +49,7 @@ const selectClass =
   'appearance-none rounded-lg border border-surfaceBorder bg-surface py-2 pl-3 pr-8 text-sm text-ceilingWhite outline-none focus:border-pear'
 
 export function UsersPage() {
-  const [users, setUsers] = useState<SupportUser[]>(initialUsers)
+  const { token } = useAuth()
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
@@ -55,48 +57,57 @@ export function UsersPage() {
   const [page, setPage] = useState(1)
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null)
   const [editingUser, setEditingUser] = useState<SupportUser | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return users.filter((u) => {
-      const fullName = `${u.firstName} ${u.lastName}`.toLowerCase()
-      const matchesQuery =
-        !q || fullName.includes(q) || u.email.toLowerCase().includes(q) || u.phone.includes(q)
-      const matchesStatus = statusFilter === 'all' || u.status === statusFilter
-      const matchesRole = roleFilter === 'all' || u.role === roleFilter
-      return matchesQuery && matchesStatus && matchesRole
-    })
-  }, [users, query, statusFilter, roleFilter])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const currentPage = Math.min(page, totalPages)
-  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const { users, pagination, isLoading, error, refetch } = useUsers({
+    query,
+    status: statusFilter,
+    role: roleFilter,
+    page,
+    pageSize,
+  })
 
   function resetToFirstPage() {
     setPage(1)
   }
 
-  function toggleSuspend(id: string) {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, status: u.status === 'suspended' ? 'active' : 'suspended' } : u,
-      ),
-    )
+  async function toggleSuspend(user: SupportUser) {
     setMenuAnchor(null)
+    setActionError(null)
+    try {
+      await updateUserStatus(user.id, user.status === 'suspended' ? 'active' : 'suspended', token)
+      refetch()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível atualizar o status.')
+    }
   }
 
-  function toggleInactive(id: string) {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, status: u.status === 'inactive' ? 'active' : 'inactive' } : u,
-      ),
-    )
+  async function toggleInactive(user: SupportUser) {
     setMenuAnchor(null)
+    setActionError(null)
+    try {
+      await updateUserStatus(user.id, user.status === 'inactive' ? 'active' : 'inactive', token)
+      refetch()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível atualizar o status.')
+    }
   }
 
-  function handleSaveUser(updated: SupportUser) {
-    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
+  async function handleSaveUser(updated: SupportUser) {
+    await updateUser(
+      updated.id,
+      {
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        username: updated.username,
+        email: updated.email,
+        phone: updated.phone,
+        role: updated.role,
+      },
+      token,
+    )
     setEditingUser(null)
+    refetch()
   }
 
   function openMenu(event: React.MouseEvent<HTMLButtonElement>, userId: string) {
@@ -163,7 +174,13 @@ export function UsersPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {actionError && <p className="text-sm text-red-400">{actionError}</p>}
+
+      {isLoading ? (
+        <p className="text-sm text-laurelLeaf">Carregando...</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
+      ) : users.length === 0 ? (
         <EmptyState dark message="Nenhum usuário encontrado com esses filtros." />
       ) : (
         <Table dark>
@@ -178,7 +195,7 @@ export function UsersPage() {
             </tr>
           </TableHead>
           <tbody>
-            {paged.map((u) => (
+            {users.map((u) => (
               <TableRow key={u.id} dark>
                 <TableCell>{u.firstName} {u.lastName}</TableCell>
                 <TableCell>{u.email}</TableCell>
@@ -223,22 +240,22 @@ export function UsersPage() {
             </select>
             <ChevronDown size={12} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-laurelLeaf" />
           </div>
-          <span>por página · {filtered.length} usuário(s)</span>
+          <span>por página · {pagination.total} usuário(s)</span>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            disabled={currentPage <= 1}
+            disabled={pagination.page <= 1}
             onClick={() => setPage((p) => p - 1)}
             className="rounded-md border border-surfaceBorder p-1.5 text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
           <span className="text-sm text-ceilingWhite">
-            Página {currentPage} de {totalPages}
+            Página {pagination.page} de {pagination.totalPages}
           </span>
           <button
-            disabled={currentPage >= totalPages}
+            disabled={pagination.page >= pagination.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded-md border border-surfaceBorder p-1.5 text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -264,13 +281,13 @@ export function UsersPage() {
               Editar
             </button>
             <button
-              onClick={() => toggleSuspend(menuUser.id)}
+              onClick={() => toggleSuspend(menuUser)}
               className="block w-full px-3 py-2 text-left text-sm text-ceilingWhite hover:bg-white/5"
             >
               {menuUser.status === 'suspended' ? 'Reativar conta' : 'Suspender conta'}
             </button>
             <button
-              onClick={() => toggleInactive(menuUser.id)}
+              onClick={() => toggleInactive(menuUser)}
               className="block w-full px-3 py-2 text-left text-sm text-ceilingWhite hover:bg-white/5"
             >
               {menuUser.status === 'inactive' ? 'Marcar como ativo' : 'Marcar como inativo'}

@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Ticket, CreditCard, ShieldAlert, Flag, Download } from 'lucide-react'
+import { Ticket, CreditCard, ShieldAlert, MessageSquare, Download } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
 import { RegionMap } from '../../components/charts/RegionMap'
 import { AnalyticsOverview } from './AnalyticsOverview'
 import { NotificationsPage } from '../notifications'
 import { useSubscriptionSummary } from './useSubscriptionSummary'
-import { summaryCards, usersByRegion, recentPayments } from './mocks'
+import { useHomeSummary } from './useHomeSummary'
+import { useRecentPayments } from './useRecentPayments'
+import { usersByRegion } from './mocks'
 
-const statIcons = [Ticket, CreditCard, ShieldAlert, Flag]
+const statIcons = [Ticket, CreditCard, ShieldAlert, MessageSquare]
 
 const tabs = ['Visão geral', 'Análises', 'Relatórios', 'Notificações'] as const
 const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises', 'Notificações']
@@ -17,6 +19,8 @@ export function HomePage() {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>(tabs[0])
   const { data: userStatusData, total: userStatusTotal, isLoading: statusLoading, error: statusError } =
     useSubscriptionSummary()
+  const { cards: summaryCards, isLoading: summaryLoading, error: summaryError } = useHomeSummary()
+  const { payments: recentPayments, isLoading: paymentsLoading, error: paymentsError } = useRecentPayments()
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,19 +63,25 @@ export function HomePage() {
       ) : (
         <>
           <div className="grid grid-cols-4 gap-4">
-            {summaryCards.map((card, i) => {
-              const Icon = statIcons[i]
-              return (
-                <Card key={card.label} dark>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-laurelLeaf">{card.label}</p>
-                    <Icon size={16} className="text-laurelLeaf" />
-                  </div>
-                  <p className="mt-2 text-2xl font-semibold text-ceilingWhite">{card.value}</p>
-                  <p className="mt-1 text-xs text-pear">{card.trend}</p>
-                </Card>
-              )
-            })}
+            {summaryLoading ? (
+              <p className="col-span-4 text-sm text-laurelLeaf">Carregando...</p>
+            ) : summaryError ? (
+              <p className="col-span-4 text-sm text-red-400">Não foi possível carregar: {summaryError}</p>
+            ) : (
+              summaryCards.map((card, i) => {
+                const Icon = statIcons[i]
+                return (
+                  <Card key={card.label} dark>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-laurelLeaf">{card.label}</p>
+                      <Icon size={16} className="text-laurelLeaf" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-ceilingWhite">{card.value}</p>
+                    <p className="mt-1 text-xs text-pear">{card.trend}</p>
+                  </Card>
+                )
+              })
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -88,24 +98,32 @@ export function HomePage() {
 
             <Card dark>
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Últimos pagamentos</h2>
-              <div className="flex flex-col gap-4">
-                {recentPayments.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold text-ceilingWhite">
-                        {p.initials}
+              {paymentsLoading ? (
+                <p className="text-sm text-laurelLeaf">Carregando...</p>
+              ) : paymentsError ? (
+                <p className="text-sm text-red-400">Não foi possível carregar: {paymentsError}</p>
+              ) : recentPayments.length === 0 ? (
+                <p className="text-sm text-laurelLeaf">Nenhum pagamento recente.</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {recentPayments.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold text-ceilingWhite">
+                          {p.initials}
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-sm text-ceilingWhite">{p.name}</span>
+                          <span className="text-xs text-laurelLeaf">{p.gateway}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-sm text-ceilingWhite">{p.name}</span>
-                        <span className="text-xs text-laurelLeaf">{p.gateway}</span>
-                      </div>
+                      <span className="text-sm font-medium text-pear">
+                        +R$ {p.amount.toFixed(2).replace('.', ',')}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-pear">
-                      +R$ {p.amount.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 

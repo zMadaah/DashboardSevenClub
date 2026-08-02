@@ -1,29 +1,18 @@
 import {
-  SummaryCard,
   RegionUserCount,
-  RecentPayment,
   WeeklyActivityPoint,
   AnalyticsStat,
   ChannelValue,
   DeviceShare,
 } from './types'
 
-// "Tickets abertos" não é um número independente — é a soma das 3 origens de ticket abaixo.
-const paymentFailuresToday = 3
-const antiCheatQueueCount = 7
-const recentReportsCount = 4
-const ticketsAbertosCount = paymentFailuresToday + antiCheatQueueCount + recentReportsCount
+// summaryCards e recentPayments saíram daqui — agora vêm de verdade da API
+// via useHomeSummary() e useRecentPayments().
+// userStatusBreakdown/totalUsers também já saíram (useSubscriptionSummary()).
 
-export const summaryCards: SummaryCard[] = [
-  { label: 'Tickets abertos', value: ticketsAbertosCount, trend: '+3 desde ontem' },
-  { label: 'Falhas de pagamento hoje', value: paymentFailuresToday, trend: '-1 vs. média diária' },
-  { label: 'Fila anti-cheat', value: antiCheatQueueCount, trend: '+2 esta semana' },
-  { label: 'Denúncias recentes', value: recentReportsCount, trend: 'estável esta semana' },
-]
-
-// userStatusBreakdown/totalUsers saíram daqui — agora vêm de verdade da API
-// via useSubscriptionSummary() (GET /users/subscription-summary).
-
+// usersByRegion continua mockado: não existe campo de região em app_users
+// nem na API ainda — precisaria decidir se isso vem de um cadastro manual
+// ou é derivado da localização das atividades, antes de conectar de verdade.
 export const usersByRegion: RegionUserCount[] = [
   { region: 'Sudeste', users: 1120 },
   { region: 'Sul', users: 520 },
@@ -32,13 +21,9 @@ export const usersByRegion: RegionUserCount[] = [
   { region: 'Norte', users: 90 },
 ]
 
-export const recentPayments: RecentPayment[] = [
-  { id: 'rp_001', name: 'Marina Ferraz Souza', initials: 'MF', gateway: 'Stripe', amount: 49.9 },
-  { id: 'rp_002', name: 'Ana Luiza Prado Martins', initials: 'AL', gateway: 'Stripe', amount: 49.9 },
-  { id: 'rp_003', name: 'Rodrigo Bezerra Nunes', initials: 'RB', gateway: 'PagSeguro', amount: 89.9 },
-  { id: 'rp_004', name: 'Lucas Prado', initials: 'LP', gateway: 'Mercado Pago', amount: 29.9 },
-  { id: 'rp_005', name: 'Camila Duarte', initials: 'CD', gateway: 'Stripe', amount: 49.9 },
-]
+// Os dados da aba "Análises" abaixo também continuam mockados — dependem de
+// infraestrutura que ainda não existe (canal de aquisição, tipo de dispositivo
+// não são rastreados em lugar nenhum do sistema hoje).
 
 export const weeklyActivity: WeeklyActivityPoint[] = [
   { day: 'Seg', activities: 620, territories: 180 },

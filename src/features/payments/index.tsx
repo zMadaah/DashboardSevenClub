@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
-import { payments } from './mocks'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { usePayments, PaymentFilter } from './usePayments'
+import { formatDate } from '../../lib/format'
 import { PaymentStatus } from '../../types'
 
 const statusTone: Record<PaymentStatus, 'success' | 'danger' | 'neutral' | 'warning'> = {
@@ -18,9 +20,7 @@ const statusLabel: Record<PaymentStatus, string> = {
   disputed: 'Em disputa',
 }
 
-type FilterOption = 'all' | PaymentStatus
-
-const filters: { key: FilterOption; label: string }[] = [
+const filters: { key: PaymentFilter; label: string }[] = [
   { key: 'all', label: 'Todos' },
   { key: 'success', label: 'Sucesso' },
   { key: 'failed', label: 'Falha' },
@@ -29,10 +29,8 @@ const filters: { key: FilterOption; label: string }[] = [
 ]
 
 export function PaymentsPage() {
-  const [activeFilter, setActiveFilter] = useState<FilterOption>('all')
-
-  const filtered =
-    activeFilter === 'all' ? payments : payments.filter((p) => p.status === activeFilter)
+  const [activeFilter, setActiveFilter] = useState<PaymentFilter>('all')
+  const { payments, isLoading, error } = usePayments(activeFilter)
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,30 +55,38 @@ export function PaymentsPage() {
         ))}
       </div>
 
-      <Table dark>
-        <TableHead dark>
-          <tr>
-            <TableCell>Usuário</TableCell>
-            <TableCell>Valor</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Gateway</TableCell>
-            <TableCell>Data</TableCell>
-          </tr>
-        </TableHead>
-        <tbody>
-          {filtered.map((p) => (
-            <TableRow key={p.id} dark>
-              <TableCell>{p.user}</TableCell>
-              <TableCell>R$ {p.amount.toFixed(2).replace('.', ',')}</TableCell>
-              <TableCell>
-                <Badge label={statusLabel[p.status]} tone={statusTone[p.status]} />
-              </TableCell>
-              <TableCell>{p.gateway}</TableCell>
-              <TableCell>{p.date}</TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      {isLoading ? (
+        <p className="text-sm text-laurelLeaf">Carregando...</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
+      ) : payments.length === 0 ? (
+        <EmptyState dark message="Nenhum pagamento encontrado." />
+      ) : (
+        <Table dark>
+          <TableHead dark>
+            <tr>
+              <TableCell>Usuário</TableCell>
+              <TableCell>Valor</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Gateway</TableCell>
+              <TableCell>Data</TableCell>
+            </tr>
+          </TableHead>
+          <tbody>
+            {payments.map((p) => (
+              <TableRow key={p.id} dark>
+                <TableCell>{p.userName}</TableCell>
+                <TableCell>R$ {p.amount.toFixed(2).replace('.', ',')}</TableCell>
+                <TableCell>
+                  <Badge label={statusLabel[p.status]} tone={statusTone[p.status]} />
+                </TableCell>
+                <TableCell>{p.gateway}</TableCell>
+                <TableCell>{formatDate(p.paidAt)}</TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </div>
   )
 }

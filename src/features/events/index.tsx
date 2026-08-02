@@ -4,8 +4,11 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { CreateEventModal } from './CreateEventModal'
-import { events as initialEvents } from './mocks'
-import { CommunityEvent, EventStatus } from './types'
+import { useEvents } from './useevents'
+import { createEvent, CreateEventPayload } from './api'
+import { useAuth } from '../../auth/AuthContext'
+import { formatDateTime } from '../../lib/format'
+import { EventStatus } from './types'
 
 const statusTone: Record<EventStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
   scheduled: 'neutral',
@@ -32,16 +35,15 @@ const filters: { key: StatusFilter; label: string }[] = [
 ]
 
 export function EventsPage() {
-  const [events, setEvents] = useState<CommunityEvent[]>(initialEvents)
+  const { token } = useAuth()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [modalOpen, setModalOpen] = useState(false)
+  const { events, isLoading, error, refetch } = useEvents(statusFilter)
 
-  const filtered =
-    statusFilter === 'all' ? events : events.filter((e) => e.status === statusFilter)
-
-  function handleCreate(event: CommunityEvent) {
-    setEvents((prev) => [event, ...prev])
+  async function handleCreate(input: CreateEventPayload) {
+    await createEvent(input, token)
     setModalOpen(false)
+    refetch()
   }
 
   return (
@@ -79,11 +81,15 @@ export function EventsPage() {
       <Card dark>
         <h2 className="mb-4 text-sm font-medium text-ceilingWhite">Histórico</h2>
 
-        {filtered.length === 0 ? (
-          <EmptyState message="Nenhum evento encontrado com esse filtro." />
+        {isLoading ? (
+          <p className="text-sm text-laurelLeaf">Carregando...</p>
+        ) : error ? (
+          <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
+        ) : events.length === 0 ? (
+          <EmptyState dark message="Nenhum evento encontrado com esse filtro." />
         ) : (
           <div className="flex flex-col divide-y divide-white/5">
-            {filtered.map((e) => (
+            {events.map((e) => (
               <div key={e.id} className="flex items-center gap-4 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-ceilingWhite">{e.name}</p>
@@ -93,7 +99,9 @@ export function EventsPage() {
                   {e.participants} pessoas
                 </span>
                 <Badge label={statusLabel[e.status]} tone={statusTone[e.status]} />
-                <span className="w-40 shrink-0 text-right text-xs text-laurelLeaf">{e.date}</span>
+                <span className="w-40 shrink-0 text-right text-xs text-laurelLeaf">
+                  {formatDateTime(e.date)}
+                </span>
               </div>
             ))}
           </div>

@@ -2,9 +2,12 @@ import { PaymentStatus } from '../../types'
 
 export interface Payment {
   id: string
-  user: string
+  userId: string
+  userName: string
   amount: number
   status: PaymentStatus
   gateway: string
-  date: string
+  gatewayReference: string | null
+  paidAt: string
+  createdAt: string
 }

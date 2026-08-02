@@ -25,7 +25,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 interface EditUserModalProps {
   user: SupportUser
   onClose: () => void
-  onSave: (updated: SupportUser) => void
+  onSave: (updated: SupportUser) => Promise<void>
 }
 
 export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
@@ -40,8 +40,9 @@ export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  function handleSave() {
+  async function handleSave() {
     if (password || confirmPassword) {
       if (password !== confirmPassword) {
         setError('As senhas não coincidem.')
@@ -52,7 +53,16 @@ export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
         return
       }
     }
-    onSave({ ...user, firstName, lastName, username, email, phone, role })
+
+    setError(null)
+    setSaving(true)
+    try {
+      await onSave({ ...user, firstName, lastName, username, email, phone, role })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -162,9 +172,10 @@ export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
       <div className="mt-6 flex justify-end">
         <button
           onClick={handleSave}
-          className="rounded-md bg-pear px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-pear/90"
+          disabled={saving}
+          className="rounded-md bg-pear px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-pear/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Salvar alterações
+          {saving ? 'Salvando...' : 'Salvar alterações'}
         </button>
       </div>
     </Modal>
