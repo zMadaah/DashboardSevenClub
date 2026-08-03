@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react'
 import { Eye, EyeOff, ChevronDown, X } from 'lucide-react'
 import { Modal } from '../../components/ui/Modal'
+import { useTheme } from '../../theme/ThemeContext'
 import { SupportUser } from './types'
 import { UserRole } from '../../types'
 
@@ -10,18 +11,6 @@ const roleOptions: { value: UserRole; label: string }[] = [
   { value: 'subscriber', label: 'Assinante' },
 ]
 
-const inputClass =
-  'w-full rounded-lg border border-surfaceBorder bg-surface px-3 py-2 text-sm text-ceilingWhite outline-none placeholder:text-laurelLeaf/60 focus:border-pear'
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-ceilingWhite">{label}</span>
-      {children}
-    </label>
-  )
-}
-
 interface EditUserModalProps {
   user: SupportUser
   onClose: () => void
@@ -29,6 +18,22 @@ interface EditUserModalProps {
 }
 
 export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
+    dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
+  }`
+
+  function Field({ label, children }: { label: string; children: ReactNode }) {
+    return (
+      <label className="flex flex-col gap-1.5">
+        <span className={`text-sm font-medium ${textPrimary}`}>{label}</span>
+        {children}
+      </label>
+    )
+  }
+
   const [firstName, setFirstName] = useState(user.firstName)
   const [lastName, setLastName] = useState(user.lastName)
   const [username, setUsername] = useState(user.username)
@@ -66,17 +71,19 @@ export function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
   }
 
   return (
-    <Modal open onClose={onClose}>
+    <Modal open onClose={onClose} dark={dark}>
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ceilingWhite">Editar usuário</h2>
+          <h2 className={`text-lg font-semibold ${textPrimary}`}>Editar usuário</h2>
           <p className="mt-1 text-sm text-laurelLeaf">
             Atualize os dados do usuário. Clique em salvar quando terminar.
           </p>
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-laurelLeaf transition-colors hover:bg-white/5 hover:text-ceilingWhite"
+          className={`rounded-md p-1 text-laurelLeaf transition-colors ${
+            dark ? 'hover:bg-white/5 hover:text-ceilingWhite' : 'hover:bg-ceilingWhite hover:text-richBlack'
+          }`}
         >
           <X size={18} />
         </button>

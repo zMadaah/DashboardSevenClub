@@ -1,13 +1,17 @@
+
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from '../Sidebar'
-import { Header } from '../Header'
+// import { Header } from '../Header'
+import { useTheme } from '../../../theme/ThemeContext'
 
 export function DashboardLayout() {
+  const { theme } = useTheme()
+
   return (
-    <div className="flex h-screen bg-richBlack">
+    <div className={`flex h-screen ${theme === 'dark' ? 'bg-richBlack' : 'bg-ceilingWhite'}`}>
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        {/* <Header /> */}
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>

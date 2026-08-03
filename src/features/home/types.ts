@@ -22,25 +22,3 @@ export interface RecentPayment {
   gateway: string
   amount: number
 }
-
-export interface WeeklyActivityPoint {
-  day: string
-  activities: number
-  territories: number
-}
-
-export interface AnalyticsStat {
-  label: string
-  value: string
-  trend: string
-}
-
-export interface ChannelValue {
-  name: string
-  value: number
-}
-
-export interface DeviceShare {
-  name: string
-  percentage: number
-}

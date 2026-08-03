@@ -8,6 +8,7 @@ import { NotificationsPage } from '../notifications'
 import { useSubscriptionSummary } from './useSubscriptionSummary'
 import { useHomeSummary } from './useHomeSummary'
 import { useRecentPayments } from './useRecentPayments'
+import { useTheme } from '../../theme/ThemeContext'
 import { usersByRegion } from './mocks'
 
 const statIcons = [Ticket, CreditCard, ShieldAlert, MessageSquare]
@@ -17,22 +18,30 @@ const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises', 'Noti
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>(tabs[0])
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const { data: userStatusData, total: userStatusTotal, isLoading: statusLoading, error: statusError } =
     useSubscriptionSummary()
   const { cards: summaryCards, isLoading: summaryLoading, error: summaryError } = useHomeSummary()
   const { payments: recentPayments, isLoading: paymentsLoading, error: paymentsError } = useRecentPayments()
 
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ceilingWhite">Dashboard</h1>
-        <button className="flex items-center gap-2 rounded-md bg-ceilingWhite px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-white">
+        <h1 className={`text-2xl font-bold ${textPrimary}`}>Dashboard</h1>
+        <button
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            dark ? 'bg-ceilingWhite text-richBlack hover:bg-white' : 'bg-richBlack text-ceilingWhite hover:bg-richBlack/90'
+          }`}
+        >
           <Download size={14} />
           Baixar relatório
         </button>
       </div>
 
-      <div className="inline-flex w-fit gap-1 rounded-lg bg-surface p-1">
+      <div className={`inline-flex w-fit gap-1 rounded-lg p-1 ${dark ? 'bg-surface' : 'bg-ceilingWhite'}`}>
         {tabs.map((tab) => {
           const isEnabled = enabledTabs.includes(tab)
           const isActive = activeTab === tab
@@ -44,9 +53,11 @@ export function HomePage() {
               title={!isEnabled ? 'Em breve' : undefined}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-richBlack text-ceilingWhite'
+                  ? dark
+                    ? 'bg-richBlack text-ceilingWhite'
+                    : 'bg-white text-richBlack shadow-sm'
                   : isEnabled
-                    ? 'text-laurelLeaf hover:text-ceilingWhite'
+                    ? `text-laurelLeaf ${dark ? 'hover:text-ceilingWhite' : 'hover:text-richBlack'}`
                     : 'cursor-not-allowed text-laurelLeaf/40'
               }`}
             >
@@ -71,12 +82,12 @@ export function HomePage() {
               summaryCards.map((card, i) => {
                 const Icon = statIcons[i]
                 return (
-                  <Card key={card.label} dark>
+                  <Card key={card.label} dark={dark}>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-laurelLeaf">{card.label}</p>
                       <Icon size={16} className="text-laurelLeaf" />
                     </div>
-                    <p className="mt-2 text-2xl font-semibold text-ceilingWhite">{card.value}</p>
+                    <p className={`mt-2 text-2xl font-semibold ${textPrimary}`}>{card.value}</p>
                     <p className="mt-1 text-xs text-pear">{card.trend}</p>
                   </Card>
                 )
@@ -85,18 +96,18 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <Card dark className="col-span-2">
+            <Card dark={dark} className="col-span-2">
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por status</h2>
               {statusLoading ? (
                 <p className="text-sm text-laurelLeaf">Carregando...</p>
               ) : statusError ? (
                 <p className="text-sm text-red-400">Não foi possível carregar: {statusError}</p>
               ) : (
-                <UserStatusDonut data={userStatusData} total={userStatusTotal} dark />
+                <UserStatusDonut data={userStatusData} total={userStatusTotal} dark={dark} />
               )}
             </Card>
 
-            <Card dark>
+            <Card dark={dark}>
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Últimos pagamentos</h2>
               {paymentsLoading ? (
                 <p className="text-sm text-laurelLeaf">Carregando...</p>
@@ -109,11 +120,13 @@ export function HomePage() {
                   {recentPayments.map((p) => (
                     <div key={p.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold text-ceilingWhite">
+                        <div
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold ${textPrimary}`}
+                        >
                           {p.initials}
                         </div>
                         <div className="flex flex-col leading-tight">
-                          <span className="text-sm text-ceilingWhite">{p.name}</span>
+                          <span className={`text-sm ${textPrimary}`}>{p.name}</span>
                           <span className="text-xs text-laurelLeaf">{p.gateway}</span>
                         </div>
                       </div>
@@ -127,9 +140,9 @@ export function HomePage() {
             </Card>
           </div>
 
-          <Card dark>
+          <Card dark={dark}>
             <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por região</h2>
-            <RegionMap data={usersByRegion} dark />
+            <RegionMap data={usersByRegion} dark={dark} />
           </Card>
         </>
       )}

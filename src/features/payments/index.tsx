@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { usePayments, PaymentFilter } from './usePayments'
 import { formatDate } from '../../lib/format'
+import { useTheme } from '../../theme/ThemeContext'
 import { PaymentStatus } from '../../types'
 
 const statusTone: Record<PaymentStatus, 'success' | 'danger' | 'neutral' | 'warning'> = {
@@ -31,11 +32,13 @@ const filters: { key: PaymentFilter; label: string }[] = [
 export function PaymentsPage() {
   const [activeFilter, setActiveFilter] = useState<PaymentFilter>('all')
   const { payments, isLoading, error } = usePayments(activeFilter)
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-ceilingWhite">Pagamentos</h1>
+        <h1 className={`text-2xl font-semibold ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>Pagamentos</h1>
         <p className="text-sm text-laurelLeaf">Transações e cobranças de assinaturas</p>
       </div>
 
@@ -47,7 +50,9 @@ export function PaymentsPage() {
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeFilter === f.key
                 ? 'bg-pear text-richBlack'
-                : 'border border-surfaceBorder text-laurelLeaf hover:text-ceilingWhite'
+                : dark
+                  ? 'border border-surfaceBorder text-laurelLeaf hover:text-ceilingWhite'
+                  : 'border border-celeste text-laurelLeaf hover:text-richBlack'
             }`}
           >
             {f.label}
@@ -60,10 +65,10 @@ export function PaymentsPage() {
       ) : error ? (
         <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
       ) : payments.length === 0 ? (
-        <EmptyState dark message="Nenhum pagamento encontrado." />
+        <EmptyState dark={dark} message="Nenhum pagamento encontrado." />
       ) : (
-        <Table dark>
-          <TableHead dark>
+        <Table dark={dark}>
+          <TableHead dark={dark}>
             <tr>
               <TableCell>Usuário</TableCell>
               <TableCell>Valor</TableCell>
@@ -74,7 +79,7 @@ export function PaymentsPage() {
           </TableHead>
           <tbody>
             {payments.map((p) => (
-              <TableRow key={p.id} dark>
+              <TableRow key={p.id} dark={dark}>
                 <TableCell>{p.userName}</TableCell>
                 <TableCell>R$ {p.amount.toFixed(2).replace('.', ',')}</TableCell>
                 <TableCell>

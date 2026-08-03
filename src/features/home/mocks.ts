@@ -1,9 +1,9 @@
 import {
   RegionUserCount,
-  WeeklyActivityPoint,
-  AnalyticsStat,
-  ChannelValue,
-  DeviceShare,
+  // WeeklyActivityPoint,
+  // AnalyticsStat,
+  // ChannelValue,
+  // DeviceShare,
 } from './types'
 
 // summaryCards e recentPayments saíram daqui — agora vêm de verdade da API
@@ -25,31 +25,31 @@ export const usersByRegion: RegionUserCount[] = [
 // infraestrutura que ainda não existe (canal de aquisição, tipo de dispositivo
 // não são rastreados em lugar nenhum do sistema hoje).
 
-export const weeklyActivity: WeeklyActivityPoint[] = [
-  { day: 'Seg', activities: 620, territories: 180 },
-  { day: 'Ter', activities: 480, territories: 210 },
-  { day: 'Qua', activities: 540, territories: 340 },
-  { day: 'Qui', activities: 610, territories: 300 },
-  { day: 'Sex', activities: 980, territories: 460 },
-  { day: 'Sáb', activities: 1120, territories: 430 },
-  { day: 'Dom', activities: 860, territories: 260 },
-]
+// export const weeklyActivity: WeeklyActivityPoint[] = [
+//   { day: 'Seg', activities: 620, territories: 180 },
+//   { day: 'Ter', activities: 480, territories: 210 },
+//   { day: 'Qua', activities: 540, territories: 340 },
+//   { day: 'Qui', activities: 610, territories: 300 },
+//   { day: 'Sex', activities: 980, territories: 460 },
+//   { day: 'Sáb', activities: 1120, territories: 430 },
+//   { day: 'Dom', activities: 860, territories: 260 },
+// ]
 
-export const analyticsStats: AnalyticsStat[] = [
-  { label: 'Atividades registradas', value: '5.210', trend: '+12,4% vs. semana passada' },
-  { label: 'Usuários ativos', value: '1.340', trend: '+5,8% vs. semana passada' },
-  { label: 'Taxa de cancelamento', value: '4,2%', trend: '-0,8% vs. semana passada' },
-  { label: 'Tempo médio de resposta', value: '3m 24s', trend: '+18s vs. semana passada' },
-]
+// export const analyticsStats: AnalyticsStat[] = [
+//   { label: 'Atividades registradas', value: '5.210', trend: '+12,4% vs. semana passada' },
+//   { label: 'Usuários ativos', value: '1.340', trend: '+5,8% vs. semana passada' },
+//   { label: 'Taxa de cancelamento', value: '4,2%', trend: '-0,8% vs. semana passada' },
+//   { label: 'Tempo médio de resposta', value: '3m 24s', trend: '+18s vs. semana passada' },
+// ]
 
-export const acquisitionChannels: ChannelValue[] = [
-  { name: 'Instagram', value: 620 },
-  { name: 'Orgânico', value: 410 },
-  { name: 'Indicação', value: 180 },
-  { name: 'Outros', value: 38 },
-]
+// export const acquisitionChannels: ChannelValue[] = [
+//   { name: 'Instagram', value: 620 },
+//   { name: 'Orgânico', value: 410 },
+//   { name: 'Indicação', value: 180 },
+//   { name: 'Outros', value: 38 },
+// ]
 
-export const deviceShare: DeviceShare[] = [
-  { name: 'iOS', percentage: 62 },
-  { name: 'Android', percentage: 38 },
-]
+// export const deviceShare: DeviceShare[] = [
+//   { name: 'iOS', percentage: 62 },
+//   { name: 'Android', percentage: 38 },
+// ]

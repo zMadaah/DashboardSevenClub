@@ -5,6 +5,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { useTickets } from './useTickets'
 import { useMessages } from './useMessages'
 import { formatDateTime } from '../../lib/format'
+import { useTheme } from '../../theme/ThemeContext'
 import { TicketStatus } from '../../types'
 
 const statusTone: Record<TicketStatus, 'warning' | 'neutral' | 'success'> = {
@@ -32,6 +33,8 @@ function avatarUrl(seed: string) {
 
 export function ChatPage() {
   const { tickets, isLoading, error } = useTickets()
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -65,19 +68,28 @@ export function ChatPage() {
   }
 
   if (tickets.length === 0) {
-    return <EmptyState dark message="Nenhum ticket de suporte no momento." />
+    return <EmptyState dark={dark} message="Nenhum ticket de suporte no momento." />
   }
+
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+  const panelClass = `rounded-xl border ${dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'}`
 
   return (
     <div className="flex h-full gap-4">
       {/* Fila de conversas */}
-      <div className="flex w-72 shrink-0 flex-col gap-2 overflow-y-auto rounded-xl border border-surfaceBorder bg-surface p-2">
+      <div className={`flex w-72 shrink-0 flex-col gap-2 overflow-y-auto p-2 ${panelClass}`}>
         {tickets.map((t) => (
           <button
             key={t.id}
             onClick={() => setSelectedId(t.id)}
             className={`flex items-start gap-3 rounded-lg p-3 text-left text-sm transition-colors ${
-              t.id === selectedId ? 'bg-white/5' : 'hover:bg-white/5'
+              t.id === selectedId
+                ? dark
+                  ? 'bg-white/5'
+                  : 'bg-ceilingWhite'
+                : dark
+                  ? 'hover:bg-white/5'
+                  : 'hover:bg-ceilingWhite'
             }`}
           >
             <img
@@ -87,7 +99,7 @@ export function ChatPage() {
             />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate font-medium text-ceilingWhite">{t.user}</span>
+                <span className={`truncate font-medium ${textPrimary}`}>{t.user}</span>
                 <Badge label={statusLabel[t.status]} tone={statusTone[t.status]} />
               </div>
               <span className="truncate text-xs text-laurelLeaf">{t.lastMessage}</span>
@@ -97,17 +109,17 @@ export function ChatPage() {
       </div>
 
       {/* Janela de conversa */}
-      <div className="flex flex-1 flex-col rounded-xl border border-surfaceBorder bg-surface p-4">
+      <div className={`flex flex-1 flex-col p-4 ${panelClass}`}>
         {selected && (
           <>
-            <div className="mb-3 flex items-center gap-3 border-b border-white/5 pb-3">
+            <div className={`mb-3 flex items-center gap-3 border-b pb-3 ${dark ? 'border-white/5' : 'border-celeste'}`}>
               <img
                 src={avatarUrl(selected.id)}
                 alt={selected.user}
                 className="h-9 w-9 rounded-full object-cover"
               />
               <div>
-                <p className="font-medium text-ceilingWhite">{selected.user}</p>
+                <p className={`font-medium ${textPrimary}`}>{selected.user}</p>
                 <p className="text-xs text-laurelLeaf">Atualizado {formatDateTime(selected.updatedAt)}</p>
               </div>
             </div>
@@ -121,7 +133,11 @@ export function ChatPage() {
                     <div key={m.id} className={`flex ${m.sender === 'staff' ? 'justify-end' : 'justify-start'}`}>
                       <div
                         className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                          m.sender === 'staff' ? 'bg-pear text-richBlack' : 'bg-white/5 text-ceilingWhite'
+                          m.sender === 'staff'
+                            ? 'bg-pear text-richBlack'
+                            : dark
+                              ? 'bg-white/5 text-ceilingWhite'
+                              : 'bg-ceilingWhite text-richBlack'
                         }`}
                       >
                         {m.message}
@@ -136,13 +152,15 @@ export function ChatPage() {
               )}
             </div>
 
-            <div className="mt-3 flex gap-2 border-t border-white/5 pt-3">
+            <div className={`mt-3 flex gap-2 border-t pt-3 ${dark ? 'border-white/5' : 'border-celeste'}`}>
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Escrever uma resposta..."
-                className="flex-1 rounded-lg border border-surfaceBorder bg-richBlack px-3 py-2 text-sm text-ceilingWhite outline-none placeholder:text-laurelLeaf/60 focus:border-pear"
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
+                  dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
+                }`}
               />
               <button
                 onClick={handleSend}
@@ -158,18 +176,28 @@ export function ChatPage() {
       </div>
 
       {/* Respostas rápidas */}
-      <div className="flex w-64 shrink-0 flex-col gap-2 rounded-xl border border-surfaceBorder bg-surface p-4">
+      <div className={`flex w-64 shrink-0 flex-col gap-2 p-4 ${panelClass}`}>
         <p className="mb-1 text-xs font-medium uppercase text-laurelLeaf">Respostas rápidas</p>
         {quickReplies.map((r) => (
           <button
             key={r}
             onClick={() => setDraft(r)}
-            className="rounded-lg border border-surfaceBorder px-3 py-2 text-left text-xs text-ceilingWhite transition-colors hover:bg-white/5"
+            className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+              dark
+                ? 'border-surfaceBorder text-ceilingWhite hover:bg-white/5'
+                : 'border-celeste text-richBlack hover:bg-ceilingWhite'
+            }`}
           >
             {r}
           </button>
         ))}
-        <button className="mt-2 rounded-lg border border-surfaceBorder bg-white/5 px-3 py-2 text-xs font-medium text-ceilingWhite transition-colors hover:bg-white/10">
+        <button
+          className={`mt-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+            dark
+              ? 'border-surfaceBorder bg-white/5 text-ceilingWhite hover:bg-white/10'
+              : 'border-celeste bg-ceilingWhite text-richBlack hover:bg-celeste'
+          }`}
+        >
           Escalar para anti-cheat
         </button>
       </div>

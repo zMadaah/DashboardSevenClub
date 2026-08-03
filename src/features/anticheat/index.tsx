@@ -4,6 +4,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { useAntiCheatFlags } from './useAntiCheatFlags'
 import { updateFlagStatus } from './api'
 import { useAuth } from '../../auth/AuthContext'
+import { useTheme } from '../../theme/ThemeContext'
 import { formatDateTime } from '../../lib/format'
 import { AntiCheatStatus } from '../../types'
 import { ActivityRoute } from './types'
@@ -46,17 +47,25 @@ function routeToPoints(coordinates: [number, number][], width = 300, height = 20
     .join(' ')
 }
 
-function RouteSvg({ route }: { route: ActivityRoute | null }) {
+function RouteSvg({ route, dark }: { route: ActivityRoute | null; dark: boolean }) {
   if (!route || route.coordinates.length < 2) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-white/10 text-sm text-laurelLeaf">
+      <div
+        className={`flex h-64 items-center justify-center rounded-xl border border-dashed text-sm text-laurelLeaf ${
+          dark ? 'border-white/10' : 'border-celeste'
+        }`}
+      >
         Trajeto não disponível
       </div>
     )
   }
 
   return (
-    <div className="flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/20 p-3">
+    <div
+      className={`flex h-64 items-center justify-center rounded-xl border p-3 ${
+        dark ? 'border-white/10 bg-black/20' : 'border-celeste bg-ceilingWhite'
+      }`}
+    >
       <svg viewBox="0 0 300 200" className="h-full w-full">
         <polyline
           points={routeToPoints(route.coordinates)}
@@ -73,6 +82,8 @@ function RouteSvg({ route }: { route: ActivityRoute | null }) {
 
 export function AntiCheatPage() {
   const { token } = useAuth()
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const { cases, isLoading, error, refetch } = useAntiCheatFlags()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -85,6 +96,8 @@ export function AntiCheatPage() {
   }, [cases, selectedId])
 
   const selected = cases.find((c) => c.id === selectedId)
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+  const panelClass = `rounded-xl border ${dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'}`
 
   async function handleAction(status: AntiCheatStatus) {
     if (!selected) return
@@ -109,7 +122,7 @@ export function AntiCheatPage() {
   }
 
   if (cases.length === 0) {
-    return <EmptyState dark message="Nenhuma flag de anti-cheat no momento." />
+    return <EmptyState dark={dark} message="Nenhuma flag de anti-cheat no momento." />
   }
 
   const avgSpeedKmh = selected
@@ -119,50 +132,54 @@ export function AntiCheatPage() {
   return (
     <div className="flex h-full gap-4">
       {/* Fila de casos */}
-      <div className="flex w-80 shrink-0 flex-col gap-2 overflow-y-auto rounded-xl border border-surfaceBorder bg-surface p-2">
+      <div className={`flex w-80 shrink-0 flex-col gap-2 overflow-y-auto p-2 ${panelClass}`}>
         {cases.map((c) => (
           <button
             key={c.id}
             onClick={() => setSelectedId(c.id)}
             className={`flex flex-col gap-1 rounded-lg p-3 text-left text-sm transition-colors ${
-              c.id === selectedId ? 'bg-white/5' : 'hover:bg-white/5'
+              c.id === selectedId ? (dark ? 'bg-white/5' : 'bg-ceilingWhite') : dark ? 'hover:bg-white/5' : 'hover:bg-ceilingWhite'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-ceilingWhite">{c.user}</span>
+              <span className={`font-medium ${textPrimary}`}>{c.user}</span>
               <Badge label={statusLabel[c.status]} tone={statusTone[c.status]} />
             </div>
             <span className="truncate text-xs text-laurelLeaf">{c.anomaly}</span>
-            <span className="text-xs font-medium text-ceilingWhite">Risco: {c.riskScore}</span>
+            <span className={`text-xs font-medium ${textPrimary}`}>Risco: {c.riskScore}</span>
           </button>
         ))}
       </div>
 
       {/* Painel de revisão */}
       {selected && (
-        <div className="flex flex-1 flex-col gap-4 rounded-xl border border-surfaceBorder bg-surface p-5">
+        <div className={`flex flex-1 flex-col gap-4 p-5 ${panelClass}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-ceilingWhite">{selected.user}</p>
+              <p className={`font-medium ${textPrimary}`}>{selected.user}</p>
               <p className="text-xs text-laurelLeaf">{formatDateTime(selected.date)}</p>
             </div>
             <Badge label={statusLabel[selected.status]} tone={statusTone[selected.status]} />
           </div>
 
-          <p className="text-sm text-ceilingWhite">{selected.anomaly}</p>
+          <p className={`text-sm ${textPrimary}`}>{selected.anomaly}</p>
 
-          <RouteSvg route={selected.activity.route} />
+          <RouteSvg route={selected.activity.route} dark={dark} />
 
-          <div className="grid grid-cols-3 gap-3 rounded-xl border border-white/10 bg-black/20 p-4 text-center">
+          <div
+            className={`grid grid-cols-3 gap-3 rounded-xl border p-4 text-center ${
+              dark ? 'border-white/10 bg-black/20' : 'border-celeste bg-ceilingWhite'
+            }`}
+          >
             <div>
               <p className="text-xs text-laurelLeaf">Distância</p>
-              <p className="text-lg font-semibold text-ceilingWhite">
+              <p className={`text-lg font-semibold ${textPrimary}`}>
                 {(selected.activity.distanceMeters / 1000).toFixed(2)} km
               </p>
             </div>
             <div>
               <p className="text-xs text-laurelLeaf">Duração</p>
-              <p className="text-lg font-semibold text-ceilingWhite">
+              <p className={`text-lg font-semibold ${textPrimary}`}>
                 {Math.round(selected.activity.durationSeconds / 60)} min
               </p>
             </div>
@@ -185,14 +202,18 @@ export function AntiCheatPage() {
             <button
               onClick={() => handleAction('invalidated')}
               disabled={updating}
-              className="rounded-lg border border-surfaceBorder px-4 py-2 text-sm font-medium text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                dark ? 'border-surfaceBorder text-ceilingWhite hover:bg-white/5' : 'border-celeste text-richBlack hover:bg-ceilingWhite'
+              }`}
             >
               Invalidar
             </button>
             <button
               onClick={() => handleAction('warned')}
               disabled={updating}
-              className="rounded-lg border border-surfaceBorder px-4 py-2 text-sm font-medium text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                dark ? 'border-surfaceBorder text-ceilingWhite hover:bg-white/5' : 'border-celeste text-richBlack hover:bg-ceilingWhite'
+              }`}
             >
               Advertir usuário
             </button>

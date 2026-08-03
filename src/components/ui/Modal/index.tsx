@@ -5,9 +5,10 @@ interface ModalProps {
   onClose: () => void
   children: ReactNode
   className?: string
+  dark?: boolean
 }
 
-export function Modal({ open, onClose, children, className = '' }: ModalProps) {
+export function Modal({ open, onClose, children, className = '', dark = true }: ModalProps) {
   useEffect(() => {
     if (!open) return
     function handleKeyDown(e: KeyboardEvent) {
@@ -26,7 +27,9 @@ export function Modal({ open, onClose, children, className = '' }: ModalProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-md rounded-xl border border-surfaceBorder bg-richBlack p-6 shadow-2xl ${className}`}
+        className={`w-full max-w-md rounded-xl border p-6 shadow-2xl ${
+          dark ? 'border-surfaceBorder bg-richBlack' : 'border-celeste bg-white'
+        } ${className}`}
       >
         {children}
       </div>

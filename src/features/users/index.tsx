@@ -7,6 +7,7 @@ import { EditUserModal } from './EditUserModal'
 import { useUsers } from './useUsers'
 import { updateUser, updateUserStatus } from './api'
 import { useAuth } from '../../auth/AuthContext'
+import { useTheme } from '../../theme/ThemeContext'
 import { SupportUser } from './types'
 import { UserStatus, UserRole } from '../../types'
 
@@ -45,11 +46,10 @@ interface MenuAnchor {
   left: number
 }
 
-const selectClass =
-  'appearance-none rounded-lg border border-surfaceBorder bg-surface py-2 pl-3 pr-8 text-sm text-ceilingWhite outline-none focus:border-pear'
-
 export function UsersPage() {
   const { token } = useAuth()
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
@@ -66,6 +66,20 @@ export function UsersPage() {
     page,
     pageSize,
   })
+
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+  const selectClass = `appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm outline-none focus:border-pear ${
+    dark ? 'border-surfaceBorder bg-surface text-ceilingWhite' : 'border-celeste bg-white text-richBlack'
+  }`
+  const inputClass = `w-full rounded-lg border py-2 pl-9 pr-3 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
+    dark ? 'border-surfaceBorder bg-surface text-ceilingWhite' : 'border-celeste bg-white text-richBlack'
+  }`
+  const pageButtonClass = `rounded-md border p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+    dark ? 'border-surfaceBorder text-ceilingWhite hover:bg-white/5' : 'border-celeste text-richBlack hover:bg-ceilingWhite'
+  }`
+  const menuButtonClass = `block w-full px-3 py-2 text-left text-sm ${
+    dark ? 'text-ceilingWhite hover:bg-white/5' : 'text-richBlack hover:bg-ceilingWhite'
+  }`
 
   function resetToFirstPage() {
     setPage(1)
@@ -123,7 +137,7 @@ export function UsersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-ceilingWhite">Usuários</h1>
+      <h1 className={`text-xl font-semibold ${textPrimary}`}>Usuários</h1>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-72">
@@ -135,7 +149,7 @@ export function UsersPage() {
               resetToFirstPage()
             }}
             placeholder="Buscar por nome, email ou celular..."
-            className="w-full rounded-lg border border-surfaceBorder bg-surface py-2 pl-9 pr-3 text-sm text-ceilingWhite outline-none placeholder:text-laurelLeaf/60 focus:border-pear"
+            className={inputClass}
           />
         </div>
 
@@ -181,10 +195,10 @@ export function UsersPage() {
       ) : error ? (
         <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
       ) : users.length === 0 ? (
-        <EmptyState dark message="Nenhum usuário encontrado com esses filtros." />
+        <EmptyState dark={dark} message="Nenhum usuário encontrado com esses filtros." />
       ) : (
-        <Table dark>
-          <TableHead dark>
+        <Table dark={dark}>
+          <TableHead dark={dark}>
             <tr>
               <TableCell>Nome</TableCell>
               <TableCell>Email</TableCell>
@@ -196,7 +210,7 @@ export function UsersPage() {
           </TableHead>
           <tbody>
             {users.map((u) => (
-              <TableRow key={u.id} dark>
+              <TableRow key={u.id} dark={dark}>
                 <TableCell>{u.firstName} {u.lastName}</TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>{u.phone}</TableCell>
@@ -209,7 +223,9 @@ export function UsersPage() {
                 <TableCell className="text-right">
                   <button
                     onClick={(e) => openMenu(e, u.id)}
-                    className="rounded-md p-1.5 text-laurelLeaf transition-colors hover:bg-white/5 hover:text-ceilingWhite"
+                    className={`rounded-md p-1.5 text-laurelLeaf transition-colors ${
+                      dark ? 'hover:bg-white/5 hover:text-ceilingWhite' : 'hover:bg-ceilingWhite hover:text-richBlack'
+                    }`}
                   >
                     <MoreVertical size={16} />
                   </button>
@@ -244,20 +260,16 @@ export function UsersPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            disabled={pagination.page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="rounded-md border border-surfaceBorder p-1.5 text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-          >
+          <button disabled={pagination.page <= 1} onClick={() => setPage((p) => p - 1)} className={pageButtonClass}>
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm text-ceilingWhite">
+          <span className={`text-sm ${textPrimary}`}>
             Página {pagination.page} de {pagination.totalPages}
           </span>
           <button
             disabled={pagination.page >= pagination.totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md border border-surfaceBorder p-1.5 text-ceilingWhite transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+            className={pageButtonClass}
           >
             <ChevronRight size={16} />
           </button>
@@ -268,7 +280,9 @@ export function UsersPage() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuAnchor(null)} />
           <div
-            className="fixed z-50 w-44 rounded-lg border border-surfaceBorder bg-surface py-1 shadow-lg"
+            className={`fixed z-50 w-44 rounded-lg border py-1 shadow-lg ${
+              dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'
+            }`}
             style={{ top: menuAnchor.top, left: menuAnchor.left }}
           >
             <button
@@ -276,20 +290,14 @@ export function UsersPage() {
                 setEditingUser(menuUser)
                 setMenuAnchor(null)
               }}
-              className="block w-full px-3 py-2 text-left text-sm text-ceilingWhite hover:bg-white/5"
+              className={menuButtonClass}
             >
               Editar
             </button>
-            <button
-              onClick={() => toggleSuspend(menuUser)}
-              className="block w-full px-3 py-2 text-left text-sm text-ceilingWhite hover:bg-white/5"
-            >
+            <button onClick={() => toggleSuspend(menuUser)} className={menuButtonClass}>
               {menuUser.status === 'suspended' ? 'Reativar conta' : 'Suspender conta'}
             </button>
-            <button
-              onClick={() => toggleInactive(menuUser)}
-              className="block w-full px-3 py-2 text-left text-sm text-ceilingWhite hover:bg-white/5"
-            >
+            <button onClick={() => toggleInactive(menuUser)} className={menuButtonClass}>
               {menuUser.status === 'inactive' ? 'Marcar como ativo' : 'Marcar como inativo'}
             </button>
           </div>

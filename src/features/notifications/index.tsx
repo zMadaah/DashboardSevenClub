@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Send, Clock } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+import { useTheme } from '../../theme/ThemeContext'
 import { notificationHistory, audienceLabel, estimatedReach } from './mocks'
 import { NotificationAudience, NotificationStatus, NotificationRecord } from './types'
 
@@ -25,13 +26,18 @@ const statusLabel: Record<NotificationStatus, string> = {
   draft: 'Rascunho',
 }
 
-const inputClass =
-  'w-full rounded-lg border border-surfaceBorder bg-richBlack px-3 py-2 text-sm text-ceilingWhite outline-none placeholder:text-laurelLeaf/60 focus:border-pear'
-const activeToggle = 'rounded-md bg-pear px-3 py-1.5 text-sm font-medium text-richBlack'
-const inactiveToggle =
-  'rounded-md border border-surfaceBorder px-3 py-1.5 text-sm font-medium text-laurelLeaf transition-colors hover:text-ceilingWhite'
-
 export function NotificationsPage() {
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+  const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
+  const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
+    dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
+  }`
+  const activeToggle = 'rounded-md bg-pear px-3 py-1.5 text-sm font-medium text-richBlack'
+  const inactiveToggle = `rounded-md border px-3 py-1.5 text-sm font-medium text-laurelLeaf transition-colors ${
+    dark ? 'border-surfaceBorder hover:text-ceilingWhite' : 'border-celeste hover:text-richBlack'
+  }`
+
   const [history, setHistory] = useState<NotificationRecord[]>(notificationHistory)
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
@@ -77,13 +83,13 @@ export function NotificationsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
-        <Card dark className="col-span-2">
-          <h2 className="text-sm font-medium text-ceilingWhite">Nova notificação</h2>
+        <Card dark={dark} className="col-span-2">
+          <h2 className={`text-sm font-medium ${textPrimary}`}>Nova notificação</h2>
           <p className="mb-4 text-xs text-laurelLeaf">Envie um push para os usuários do app</p>
 
           <div className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ceilingWhite">Título</span>
+              <span className={`text-sm font-medium ${textPrimary}`}>Título</span>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -95,7 +101,7 @@ export function NotificationsPage() {
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ceilingWhite">Mensagem</span>
+              <span className={`text-sm font-medium ${textPrimary}`}>Mensagem</span>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -108,7 +114,7 @@ export function NotificationsPage() {
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ceilingWhite">Público-alvo</span>
+              <span className={`text-sm font-medium ${textPrimary}`}>Público-alvo</span>
               <select
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as NotificationAudience)}
@@ -126,7 +132,7 @@ export function NotificationsPage() {
             </label>
 
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-ceilingWhite">Quando enviar</span>
+              <span className={`text-sm font-medium ${textPrimary}`}>Quando enviar</span>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -175,8 +181,11 @@ export function NotificationsPage() {
           </div>
         </Card>
 
-        <Card dark>
-          <h2 className="mb-4 text-sm font-medium text-ceilingWhite">Pré-visualização</h2>
+        {/* A pré-visualização simula uma notificação real de celular — fica sempre
+            clara de propósito, independente do tema do dashboard (é assim que
+            aparece na tela de bloqueio, não no dashboard em si). */}
+        <Card dark={dark}>
+          <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Pré-visualização</h2>
           <div className="rounded-2xl bg-black/30 p-4">
             <div className="flex items-start gap-3 rounded-xl bg-white/95 p-3 shadow-lg">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pear text-xs font-bold text-richBlack">
@@ -202,13 +211,13 @@ export function NotificationsPage() {
         </Card>
       </div>
 
-      <Card dark>
-        <h2 className="mb-4 text-sm font-medium text-ceilingWhite">Histórico</h2>
-        <div className="flex flex-col divide-y divide-white/5">
+      <Card dark={dark}>
+        <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Histórico</h2>
+        <div className={`flex flex-col divide-y ${dark ? 'divide-white/5' : 'divide-celeste'}`}>
           {history.map((n) => (
             <div key={n.id} className="flex items-center gap-4 py-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ceilingWhite">{n.title}</p>
+                <p className={`truncate text-sm font-medium ${textPrimary}`}>{n.title}</p>
                 <p className="truncate text-xs text-laurelLeaf">{n.message}</p>
               </div>
               <span className="w-36 shrink-0 text-xs text-laurelLeaf">{audienceLabel[n.audience]}</span>
