@@ -26,6 +26,7 @@ export function Sidebar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
   const dark = theme === 'dark'
+  const [logoError, setLogoError] = useState(false)
 
   function handleLogout() {
     logout()
@@ -46,7 +47,16 @@ export function Sidebar() {
     <aside className={`flex w-60 shrink-0 flex-col px-3 py-4 ${dark ? 'bg-richBlack' : 'bg-white border-r border-celeste'}`}>
       <div className="mb-6 flex items-center gap-2 rounded-lg px-2 py-2">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
-          7C
+          {logoError ? (
+            '7C'
+          ) : (
+            <img
+              src="/logo.jpg"
+              alt="Seven Club"
+              className="h-6 w-6 object-contain"
+              onError={() => setLogoError(true)}
+            />
+          )}
         </div>
         <div className="flex flex-col leading-tight">
           <span className={`text-sm font-semibold ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>
@@ -108,7 +118,11 @@ export function Sidebar() {
             dark ? 'border-white/5 hover:bg-white/5' : 'border-celeste hover:bg-ceilingWhite'
           }`}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/30 text-xs font-semibold text-ceilingWhite">
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/30 text-xs font-semibold ${
+              dark ? 'text-ceilingWhite' : 'text-richBlack'
+            }`}
+          >
             {user ? getInitials(user.name) : '?'}
           </div>
           <div className="flex flex-col items-start leading-tight">

@@ -47,6 +47,7 @@ export function NotificationsPage() {
   const [scheduleTime, setScheduleTime] = useState('')
   const [sending, setSending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+    const [logoError, setLogoError] = useState(false)
 
   async function handleSend() {
     if (!title.trim() || !message.trim()) {
@@ -188,9 +189,18 @@ export function NotificationsPage() {
           <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Pré-visualização</h2>
           <div className="rounded-2xl bg-black/30 p-4">
             <div className="flex items-start gap-3 rounded-xl bg-white/95 p-3 shadow-lg">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pear text-xs font-bold text-richBlack">
-                7C
-              </div>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
+          {logoError ? (
+            '7C'
+          ) : (
+            <img
+              src="/logo.jpg"
+              alt="Seven Club"
+              className="h-6 w-6 object-contain"
+              onError={() => setLogoError(true)}
+            />
+          )}
+        </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-richBlack">Seven Club</span>

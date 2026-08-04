@@ -1,7 +1,7 @@
 import { apiFetch } from '../../lib/api'
 
 export interface WeeklyActivityPoint {
-  day: string
+  date: string
   activities: number
   territories: number
 }
@@ -22,6 +22,16 @@ export interface AnalyticsOverviewResponse {
   antiCheatByStatus: StatusCounts
 }
 
-export function fetchAnalyticsOverview(token: string | null) {
-  return apiFetch<AnalyticsOverviewResponse>('/analytics/overview', token)
+export type AnalyticsRange = { days: number } | { year: number; month: number }
+
+export function fetchAnalyticsOverview(range: AnalyticsRange, token: string | null) {
+  const qs = new URLSearchParams()
+  if ('year' in range) {
+    qs.set('rangeYear', String(range.year))
+    qs.set('rangeMonth', String(range.month))
+  } else {
+    qs.set('rangeDays', String(range.days))
+  }
+
+  return apiFetch<AnalyticsOverviewResponse>(`/analytics/overview?${qs.toString()}`, token)
 }

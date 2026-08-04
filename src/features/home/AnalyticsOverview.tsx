@@ -1,4 +1,5 @@
-import { Activity, Users, Percent, Clock } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Activity, Users, Percent, Clock, ChevronDown } from 'lucide-react'
 import {
   AreaChart,
   Area,
@@ -11,7 +12,7 @@ import {
 import { Card } from '../../components/ui/Card'
 import { useTheme } from '../../theme/ThemeContext'
 import { useAnalyticsOverview } from './useAnalyticsOverview'
-import { StatusCounts } from './analyticsApi'
+import { AnalyticsRange, StatusCounts } from './analyticsApi'
 
 const statIcons = [Activity, Users, Percent, Clock]
 
@@ -28,6 +29,48 @@ const antiCheatStatusLabel: Record<string, string> = {
   invalidated: 'Invalidado',
   warned: 'Advertido',
   banned: 'Banido',
+}
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
+// Converte "2026-08-02" em "02/08" sem passar por Date/timezone — evita o
+// clássico bug de virar um dia pra trás dependendo do fuso do navegador.
+function formatChartDate(iso: string): string {
+  const [, month, day] = iso.split('-')
+  return `${day}/${month}`
+}
+
+interface RangeOption {
+  value: string
+  label: string
+  range: AnalyticsRange
+}
+
+function buildRangeOptions(): RangeOption[] {
+  const options: RangeOption[] = [
+    { value: 'days-7', label: 'Últimos 7 dias', range: { days: 7 } },
+    { value: 'days-15', label: 'Últimos 15 dias', range: { days: 15 } },
+    { value: 'days-30', label: 'Últimos 30 dias', range: { days: 30 } },
+  ]
+
+  const now = new Date()
+  for (let i = 0; i < 6; i++) {
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1 - i
+    const normalizedMonth = ((month - 1 + 12) % 12) + 1
+    const normalizedYear = year + Math.floor((month - 1) / 12)
+    const label = i === 0 ? `${MONTH_NAMES[normalizedMonth - 1]} (mês atual)` : `${MONTH_NAMES[normalizedMonth - 1]} ${normalizedYear}`
+    options.push({
+      value: `month-${normalizedYear}-${normalizedMonth}`,
+      label,
+      range: { year: normalizedYear, month: normalizedMonth },
+    })
+  }
+
+  return options
 }
 
 function StatusBars({
@@ -64,15 +107,29 @@ export function AnalyticsOverview() {
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
-  const { data, isLoading, error } = useAnalyticsOverview()
+
+  const rangeOptions = useMemo(buildRangeOptions, [])
+  const [rangeValue, setRangeValue] = useState(rangeOptions[0].value)
+  const selectedRange = rangeOptions.find((o) => o.value === rangeValue) ?? rangeOptions[0]
+
+  const { data, isLoading, error } = useAnalyticsOverview(selectedRange.range)
+
+  // No fundo claro, as cores "apagadas" (pear muito claro, laurelLeaf acinzentado)
+  // perdem contraste contra o branco — usamos tons mais escuros só nesse caso.
+  const activitiesColor = dark ? '#BCFF00' : '#7A9900'
+  const territoriesColor = dark ? '#96998C' : '#5C6154'
 
   const gridStroke = dark ? '#1C3333' : '#D2D3CE'
-  const axisStroke = '#96998C'
+  const axisStroke = dark ? '#96998C' : '#6B6E63'
   const tooltipStyle = dark
     ? { background: '#0E2222', borderColor: '#1C3333', borderRadius: 8, fontSize: 12, color: '#E9EBE6' }
     : { background: '#FFFFFF', borderColor: '#D2D3CE', borderRadius: 8, fontSize: 12, color: '#061414' }
 
-  if (isLoading) {
+  const selectClass = `appearance-none rounded-lg border py-1.5 pl-3 pr-8 text-xs font-medium outline-none focus:border-pear ${
+    dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
+  }`
+
+  if (isLoading && !data) {
     return <p className="text-sm text-laurelLeaf">Carregando...</p>
   }
 
@@ -90,18 +147,42 @@ export function AnalyticsOverview() {
     },
   ]
 
+  const pointCount = data.weeklyActivity.length
+  const xAxisInterval = pointCount > 12 ? Math.ceil(pointCount / 10) - 1 : 0
+
   return (
     <div className="flex flex-col gap-4">
       <Card dark={dark}>
-        <h2 className={`text-sm font-medium ${textPrimary}`}>Atividade semanal</h2>
-        <p className="mb-4 text-xs text-laurelLeaf">Corridas/pedaladas e territórios capturados por dia</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className={`text-sm font-medium ${textPrimary}`}>Atividade semanal</h2>
+            <p className="mb-4 text-xs text-laurelLeaf">Corridas/pedaladas e territórios capturados por dia</p>
+          </div>
+          <div className="relative">
+            <select
+              value={rangeValue}
+              onChange={(e) => setRangeValue(e.target.value)}
+              className={selectClass}
+            >
+              {rangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={12}
+              className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-laurelLeaf"
+            />
+          </div>
+        </div>
 
         <div className="mb-3 flex items-center gap-4 text-xs">
           <span className="flex items-center gap-1.5 text-laurelLeaf">
-            <span className="h-2 w-2 rounded-full bg-pear" /> Atividades
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: activitiesColor }} /> Atividades
           </span>
           <span className="flex items-center gap-1.5 text-laurelLeaf">
-            <span className="h-2 w-2 rounded-full bg-laurelLeaf" /> Territórios capturados
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: territoriesColor }} /> Territórios capturados
           </span>
         </div>
 
@@ -109,23 +190,34 @@ export function AnalyticsOverview() {
           <AreaChart data={data.weeklyActivity} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
             <defs>
               <linearGradient id="activitiesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#BCFF00" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#BCFF00" stopOpacity={0} />
+                <stop offset="5%" stopColor={activitiesColor} stopOpacity={0.35} />
+                <stop offset="95%" stopColor={activitiesColor} stopOpacity={0} />
               </linearGradient>
               <linearGradient id="territoriesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#96998C" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#96998C" stopOpacity={0} />
+                <stop offset="5%" stopColor={territoriesColor} stopOpacity={0.35} />
+                <stop offset="95%" stopColor={territoriesColor} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-            <XAxis dataKey="day" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={12} />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatChartDate}
+              interval={xAxisInterval}
+              stroke={axisStroke}
+              tickLine={false}
+              axisLine={false}
+              fontSize={12}
+            />
             <YAxis stroke={axisStroke} tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip contentStyle={tooltipStyle} />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              labelFormatter={(label) => (typeof label === 'string' ? formatChartDate(label) : label)}
+            />
             <Area
               type="monotone"
               dataKey="activities"
               name="Atividades"
-              stroke="#BCFF00"
+              stroke={activitiesColor}
               strokeWidth={2}
               fill="url(#activitiesGradient)"
             />
@@ -133,7 +225,7 @@ export function AnalyticsOverview() {
               type="monotone"
               dataKey="territories"
               name="Territórios capturados"
-              stroke="#96998C"
+              stroke={territoriesColor}
               strokeWidth={2}
               fill="url(#territoriesGradient)"
             />
