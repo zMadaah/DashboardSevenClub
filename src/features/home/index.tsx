@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ticket, CreditCard, ShieldAlert, MessageSquare, Download } from 'lucide-react'
+import { Ticket, CreditCard, ShieldAlert, MessageSquare, Download, DollarSign } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
 import { RegionMap } from '../../components/charts/RegionMap'
@@ -11,7 +11,7 @@ import { useRecentPayments } from './useRecentPayments'
 import { useTheme } from '../../theme/ThemeContext'
 import { usersByRegion } from './mocks'
 
-const statIcons = [Ticket, CreditCard, ShieldAlert, MessageSquare]
+const statIcons = [Ticket, CreditCard, ShieldAlert, MessageSquare, DollarSign]
 
 const tabs = ['Visão geral', 'Análises', 'Relatórios', 'Notificações'] as const
 const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises', 'Notificações']

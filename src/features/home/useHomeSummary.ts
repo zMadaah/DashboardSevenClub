@@ -23,26 +23,31 @@ export function useHomeSummary() {
         if (cancelled) return
         const ticketsAbertos = paymentsSummary.failuresToday + pendingFlags + openTickets
 
-        setCards([
+      setCards([
           { label: 'Tickets abertos', value: ticketsAbertos, trend: 'soma dos indicadores abaixo' },
           { label: 'Falhas de pagamento hoje', value: paymentsSummary.failuresToday, trend: 'hoje' },
           { label: 'Fila anti-cheat', value: pendingFlags, trend: 'pendentes de revisão' },
           { label: 'Tickets de suporte abertos', value: openTickets, trend: 'novos + em andamento' },
+          {
+            label: 'Receita total',
+            value: `R$ ${paymentsSummary.totalRevenue.toFixed(2).replace('.', ',')}`,
+            trend: 'pagamentos com sucesso',
+          },
         ])
         setError(null)
       })
-      .catch((err: unknown) => {
+       .catch((err: unknown) => {
         if (cancelled) return
         setError(err instanceof ApiError ? err.message : 'Erro ao carregar resumo')
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false)
       })
-
+ 
     return () => {
       cancelled = true
     }
   }, [token])
-
+ 
   return { cards, isLoading, error }
 }

@@ -1,6 +1,6 @@
 export interface SummaryCard {
   label: string
-  value: number
+  value: number | string
   trend: string
 }
 
