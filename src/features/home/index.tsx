@@ -142,7 +142,7 @@ export function HomePage() {
 
           <Card dark={dark}>
             <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por região</h2>
-            <RegionMap data={usersByRegion} dark={dark} />
+            <RegionMap data={usersByRegion} />
           </Card>
         </>
       )}
