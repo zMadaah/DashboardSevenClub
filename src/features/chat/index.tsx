@@ -27,19 +27,23 @@ const quickReplies = [
   'Vamos escalar isso para a análise de anti-cheat.',
 ]
 
+// Digitar isso (em qualquer caixa) e enviar encerra o atendimento —
+// mesmo efeito do botão "Finalizar atendimento" na barra lateral.
+const CLOSE_COMMAND = '/finalizar'
+
 function avatarUrl(seed: string) {
   return `https://i.pravatar.cc/64?u=${seed}`
 }
 
 export function ChatPage() {
-  const { tickets, isLoading, error } = useTickets()
+  const { tickets, isLoading, error, refetch } = useTickets()
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, isLoading: messagesLoading, sending, send } = useMessages(selectedId)
+  const { messages, isLoading: messagesLoading, sending, send, closeConversation } = useMessages(selectedId)
 
   useEffect(() => {
     if (!selectedId && tickets.length > 0) {
@@ -55,8 +59,21 @@ export function ChatPage() {
 
   async function handleSend() {
     if (!draft.trim()) return
+
+    if (draft.trim().toLowerCase() === CLOSE_COMMAND) {
+      setDraft('')
+      await closeConversation()
+      refetch()
+      return
+    }
+
     await send(draft)
     setDraft('')
+  }
+
+  async function handleFinalize() {
+    await closeConversation()
+    refetch()
   }
 
   if (isLoading) {
@@ -157,7 +174,7 @@ export function ChatPage() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Escrever uma resposta..."
+                placeholder="Escrever uma resposta... (ou /finalizar para encerrar)"
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
                   dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
                 }`}
@@ -191,6 +208,13 @@ export function ChatPage() {
             {r}
           </button>
         ))}
+        <button
+          onClick={handleFinalize}
+          disabled={sending || !selected || selected.status === 'resolved'}
+          className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {selected?.status === 'resolved' ? 'Atendimento já encerrado' : 'Finalizar atendimento'}
+        </button>
         <button
           className={`mt-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
             dark
