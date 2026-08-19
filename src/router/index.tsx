@@ -8,6 +8,7 @@ import { UsersPage } from '../features/users'
 import { ChatPage } from '../features/chat'
 import { EventsPage } from '../features/events'
 import { AntiCheatPage } from '../features/anticheat'
+import { AnalyticsPage } from '../features/analytics'
 
 export function AppRouter() {
   return (
@@ -22,6 +23,7 @@ export function AppRouter() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/eventos" element={<EventsPage />} />
           <Route path="/anti-cheat" element={<AntiCheatPage />} />
+          <Route path="/analises" element={<AnalyticsPage />} />
         </Route>
       </Route>
     </Routes>
