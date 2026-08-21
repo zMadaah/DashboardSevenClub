@@ -1,10 +1,15 @@
 import { useState } from 'react'
-import { Activity, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Activity, Trophy, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useActivities } from './useActivities'
 import { useTerritoryDominance } from './useTerritoryDominance'
+import { useActivitiesDailySummary } from './useActivitiesDailySummary'
+import { ActivitiesChart } from './components/ActivitiesChart'
+import { TerritoryDominanceChart } from './components/TerritoryDominanceChart'
+import { deleteActivity } from './api'
+import { useAuth } from '../../auth/AuthContext'
 import { useTheme } from '../../theme/ThemeContext'
 import { formatDateTime } from '../../lib/format'
 
@@ -26,23 +31,43 @@ function formatDuration(seconds: number): string {
 
 export function AnalyticsPage() {
   const { theme } = useTheme()
+  const { token } = useAuth()
   const dark = theme === 'dark'
   const [tab, setTab] = useState<Tab>('activities')
   const [activityType, setActivityType] = useState<ActivityTypeFilter>('run')
   const [page, setPage] = useState(1)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const {
     activities,
     pagination,
     isLoading: activitiesLoading,
     error: activitiesError,
+    refetch: refetchActivities,
   } = useActivities({ page, pageSize: PAGE_SIZE, activityType })
+
+  async function handleDelete(activityId: string, activityName: string) {
+    if (!window.confirm(`Apagar a atividade "${activityName}"? Não reverte território já capturado.`)) {
+      return
+    }
+    setDeletingId(activityId)
+    try {
+      await deleteActivity(activityId, token)
+      await refetchActivities()
+    } catch {
+      window.alert('Não foi possível apagar essa atividade.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const {
     rows: territoryRows,
     isLoading: territoryLoading,
     error: territoryError,
   } = useTerritoryDominance(activityType)
+
+  const { rows: dailySummary, isLoading: summaryLoading } = useActivitiesDailySummary(activityType, 30)
 
   const tabs: { id: Tab; label: string; icon: typeof Activity }[] = [
     { id: 'activities', label: 'Atividades registradas', icon: Activity },
@@ -111,6 +136,15 @@ export function AnalyticsPage() {
         <>
           {activitiesError && <p className="text-sm text-red-600">{activitiesError}</p>}
 
+          {!summaryLoading && dailySummary.length > 0 && (
+            <div className={`rounded-xl border p-4 ${dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'}`}>
+              <p className={`mb-2 text-sm font-medium ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>
+                Distância total por dia (últimos 30 dias)
+              </p>
+              <ActivitiesChart data={dailySummary} dark={dark} />
+            </div>
+          )}
+
           {!activitiesLoading && activities.length === 0 ? (
             <EmptyState message="Nenhuma atividade registrada com esse filtro ainda." dark={dark} />
           ) : (
@@ -124,6 +158,7 @@ export function AnalyticsPage() {
                   <TableCell className="font-medium">Território capturado</TableCell>
                   <TableCell className="font-medium">Loop fechado</TableCell>
                   <TableCell className="font-medium">Data</TableCell>
+                  <TableCell className="font-medium">Ação</TableCell>
                 </TableRow>
               </TableHead>
               <tbody>
@@ -143,6 +178,17 @@ export function AnalyticsPage() {
                       />
                     </TableCell>
                     <TableCell>{formatDateTime(a.createdAt)}</TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(a.id, a.name)}
+                        disabled={deletingId === a.id}
+                        title="Apagar atividade (uso em teste)"
+                        className="rounded-md p-1.5 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-40"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </tbody>
@@ -178,6 +224,15 @@ export function AnalyticsPage() {
       ) : (
         <>
           {territoryError && <p className="text-sm text-red-600">{territoryError}</p>}
+
+          {!territoryLoading && territoryRows.length > 0 && (
+            <div className={`rounded-xl border p-4 ${dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'}`}>
+              <p className={`mb-2 text-sm font-medium ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>
+                Top 10 — território dominado
+              </p>
+              <TerritoryDominanceChart data={territoryRows} dark={dark} />
+            </div>
+          )}
 
           {!territoryLoading && territoryRows.length === 0 ? (
             <EmptyState message="Ninguém capturou território ainda nesse tipo de atividade." dark={dark} />

@@ -19,3 +19,10 @@ export interface TerritoryDominanceRow {
   territoryKm2: number
   cellsOwned: number
 }
+
+export interface DailySummaryRow {
+  day: string
+  activityCount: number
+  distanceKm: number
+  captureKm2: number
+}

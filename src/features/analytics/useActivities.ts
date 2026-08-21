@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../lib/api'
 import { listActivities, ListActivitiesParams } from './api'
@@ -11,30 +11,32 @@ export function useActivities(params: ListActivitiesParams) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const fetchActivities = useCallback(() => {
     setIsLoading(true)
-
-    listActivities(params, token)
+    return listActivities(params, token)
       .then((data) => {
-        if (cancelled) return
         setActivities(data.activities)
         setPagination(data.pagination)
         setError(null)
       })
       .catch((err: unknown) => {
-        if (cancelled) return
         setError(err instanceof ApiError ? err.message : 'Erro ao carregar atividades')
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false)
+        setIsLoading(false)
       })
-
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.page, params.pageSize, params.activityType, token])
 
-  return { activities, pagination, isLoading, error }
+  useEffect(() => {
+    let cancelled = false
+    fetchActivities().then(() => {
+      if (cancelled) return
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [fetchActivities])
+
+  return { activities, pagination, isLoading, error, refetch: fetchActivities }
 }

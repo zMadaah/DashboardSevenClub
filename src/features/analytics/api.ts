@@ -1,5 +1,5 @@
 import { apiFetch } from '../../lib/api'
-import { ActivityRow, TerritoryDominanceRow } from './types'
+import { ActivityRow, TerritoryDominanceRow, DailySummaryRow } from './types'
 
 interface ActivitiesListResponse {
   activities: ActivityRow[]
@@ -23,4 +23,19 @@ export async function listActivities(params: ListActivitiesParams, token: string
 
 export async function getTerritoryDominance(activityType: 'run' | 'ride', token: string | null) {
   return apiFetch<TerritoryDominanceRow[]>(`/analytics/territory?activityType=${activityType}`, token)
+}
+
+export async function getActivitiesDailySummary(
+  activityType: 'run' | 'ride',
+  days: number,
+  token: string | null
+) {
+  return apiFetch<DailySummaryRow[]>(
+    `/analytics/activities/summary?activityType=${activityType}&days=${days}`,
+    token
+  )
+}
+
+export async function deleteActivity(activityId: string, token: string | null) {
+  return apiFetch<void>(`/analytics/activities/${activityId}`, token, { method: 'DELETE' })
 }
