@@ -89,7 +89,7 @@ export function HomePage() {
                       <Ticket size={16} className="text-laurelLeaf" />
                     </div>
                     <p className={`mt-2 text-2xl font-semibold ${textPrimary}`}>{card.value}</p>
-                    <p className="mt-1 text-xs text-pear">{card.trend}</p>
+                    <p className="mt-1 text-xs text-richblack">{card.trend}</p>
                   </Card>
                 ))}
 
