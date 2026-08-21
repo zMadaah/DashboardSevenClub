@@ -186,7 +186,7 @@ export function NotificationsPage() {
             clara de propósito, independente do tema do dashboard (é assim que
             aparece na tela de bloqueio, não no dashboard em si). */}
         <Card dark={dark}>
-          <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Pré-visualização</h2>
+          <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Pré-visualização x</h2>
           <div className="rounded-2xl bg-black/30 p-4">
             <div className="flex items-start gap-3 rounded-xl bg-white/95 p-3 shadow-lg">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
