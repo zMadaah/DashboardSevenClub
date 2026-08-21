@@ -79,3 +79,15 @@ export async function updateUserStatus(id: string, status: UserStatus, token: st
   })
   return mapUser(row)
 }
+
+export async function sendTestNotification(
+  userId: string,
+  title: string,
+  body: string,
+  token: string | null,
+) {
+  return apiFetch<{ sent: boolean }>('/notifications/send-test', token, {
+    method: 'POST',
+    body: JSON.stringify({ userId, title, body }),
+  })
+}

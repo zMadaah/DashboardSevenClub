@@ -4,6 +4,7 @@ import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { EditUserModal } from './EditUserModal'
+import { TestNotificationModal } from './TestNotificationModal'
 import { useUsers } from './useUsers'
 import { updateUser, updateUserStatus } from './api'
 import { useAuth } from '../../auth/AuthContext'
@@ -57,6 +58,7 @@ export function UsersPage() {
   const [page, setPage] = useState(1)
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null)
   const [editingUser, setEditingUser] = useState<SupportUser | null>(null)
+  const [testingUser, setTestingUser] = useState<SupportUser | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { users, pagination, isLoading, error, refetch } = useUsers({
@@ -300,8 +302,21 @@ export function UsersPage() {
             <button onClick={() => toggleInactive(menuUser)} className={menuButtonClass}>
               {menuUser.status === 'inactive' ? 'Marcar como ativo' : 'Marcar como inativo'}
             </button>
+            <button
+              onClick={() => {
+                setTestingUser(menuUser)
+                setMenuAnchor(null)
+              }}
+              className={menuButtonClass}
+            >
+              Testar notificação
+            </button>
           </div>
         </>
+      )}
+
+      {testingUser && (
+        <TestNotificationModal user={testingUser} onClose={() => setTestingUser(null)} dark={dark} />
       )}
 
       {editingUser && (
