@@ -20,6 +20,17 @@ const statusLabel: Record<TicketStatus, string> = {
   resolved: 'Resolvido',
 }
 
+// 3 abas fixas — mesmos 3 estados que o backend já usa
+// (support_tickets.status), só reorganizando a exibição em vez de uma
+// lista única com selo. Contagem de cada aba vem dos tickets que o hook
+// já buscou de uma vez (pageSize=100) — trocar de aba é só filtro local,
+// não dispara chamada de API nova.
+const TABS: { status: TicketStatus; label: string }[] = [
+  { status: 'new', label: 'Novo Chat' },
+  { status: 'in_progress', label: 'Em Andamento' },
+  { status: 'resolved', label: 'Finalizado' },
+]
+
 // Respostas prontas — texto estático de apoio, não é dado de negócio.
 const quickReplies = [
   'Pode nos enviar um print do erro?',
@@ -39,17 +50,22 @@ export function ChatPage() {
   const { tickets, isLoading, error, refetch } = useTickets()
   const { theme } = useTheme()
   const dark = theme === 'dark'
+  const [activeTab, setActiveTab] = useState<TicketStatus>('new')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { messages, isLoading: messagesLoading, sending, send, closeConversation } = useMessages(selectedId)
 
+  const visibleTickets = tickets.filter((t) => t.status === activeTab)
+
   useEffect(() => {
-    if (!selectedId && tickets.length > 0) {
-      setSelectedId(tickets[0].id)
+    // Troca de aba, ou o ticket selecionado saiu da aba atual (ex:
+    // acabou de ser finalizado) — seleciona o primeiro da aba nova.
+    if (!visibleTickets.some((t) => t.id === selectedId)) {
+      setSelectedId(visibleTickets[0]?.id ?? null)
     }
-  }, [tickets, selectedId])
+  }, [activeTab, tickets]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,45 +100,69 @@ export function ChatPage() {
     return <p className="text-sm text-red-400">Não foi possível carregar: {error}</p>
   }
 
-  if (tickets.length === 0) {
-    return <EmptyState dark={dark} message="Nenhum ticket de suporte no momento." />
-  }
-
   const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
   const panelClass = `rounded-xl border ${dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'}`
 
   return (
     <div className="flex h-full gap-4">
       {/* Fila de conversas */}
-      <div className={`flex w-72 shrink-0 flex-col gap-2 overflow-y-auto p-2 ${panelClass}`}>
-        {tickets.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setSelectedId(t.id)}
-            className={`flex items-start gap-3 rounded-lg p-3 text-left text-sm transition-colors ${
-              t.id === selectedId
-                ? dark
-                  ? 'bg-white/5'
-                  : 'bg-ceilingWhite'
-                : dark
-                  ? 'hover:bg-white/5'
-                  : 'hover:bg-ceilingWhite'
-            }`}
-          >
-            <img
-              src={avatarUrl(t.id)}
-              alt={t.user}
-              className="h-10 w-10 shrink-0 rounded-full object-cover"
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className={`truncate font-medium ${textPrimary}`}>{t.user}</span>
-                <Badge label={statusLabel[t.status]} tone={statusTone[t.status]} />
-              </div>
-              <span className="truncate text-xs text-laurelLeaf">{t.lastMessage}</span>
-            </div>
-          </button>
-        ))}
+      <div className={`flex w-72 shrink-0 flex-col ${panelClass}`}>
+        <div className={`flex border-b p-2 ${dark ? 'border-white/5' : 'border-celeste'}`}>
+          {TABS.map((tab) => {
+            const count = tickets.filter((t) => t.status === tab.status).length
+            return (
+              <button
+                key={tab.status}
+                onClick={() => setActiveTab(tab.status)}
+                className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                  activeTab === tab.status
+                    ? 'bg-pear text-richBlack'
+                    : dark
+                      ? 'text-laurelLeaf hover:text-ceilingWhite'
+                      : 'text-laurelLeaf hover:text-richBlack'
+                }`}
+              >
+                {tab.label}
+                {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
+          {visibleTickets.length === 0 ? (
+            <EmptyState dark={dark} message={`Nenhuma conversa em "${TABS.find((t) => t.status === activeTab)?.label}".`} />
+          ) : (
+            visibleTickets.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedId(t.id)}
+                className={`flex items-start gap-3 rounded-lg p-3 text-left text-sm transition-colors ${
+                  t.id === selectedId
+                    ? dark
+                      ? 'bg-white/5'
+                      : 'bg-ceilingWhite'
+                    : dark
+                      ? 'hover:bg-white/5'
+                      : 'hover:bg-ceilingWhite'
+                }`}
+              >
+                <img
+                  src={avatarUrl(t.id)}
+                  alt={t.user}
+                  className="h-10 w-10 shrink-0 rounded-full object-cover"
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`truncate font-medium ${textPrimary}`}>{t.user}</span>
+                    <Badge label={statusLabel[t.status]} tone={statusTone[t.status]} />
+                  </div>
+                  <span className="truncate text-xs text-laurelLeaf">{t.lastMessage}</span>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Janela de conversa */}
