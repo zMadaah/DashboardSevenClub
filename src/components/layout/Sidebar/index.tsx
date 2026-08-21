@@ -37,7 +37,7 @@ export function Sidebar() {
 
   const navItems = [
     { to: '/', label: 'Home', icon: Home },
-    { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
+    { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard, disabled: true },
     { to: '/usuarios', label: 'Usuários', icon: Users },
     { to: '/chat', label: 'Suporte de chat', icon: MessageSquare, badge: openChatsCount },
     { to: '/eventos', label: 'Evento', icon: Trophy },
@@ -74,7 +74,26 @@ export function Sidebar() {
       </p>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map(({ to, label, icon: Icon, badge }) => (
+        {navItems.map(({ to, label, icon: Icon, badge, disabled }) =>
+          disabled ? (
+            <div
+              key={to}
+              title="Em breve"
+              className={`flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-sm ${
+                dark ? 'text-laurelLeaf/40' : 'text-laurelLeaf/50'
+              }`}
+            >
+              <Icon size={18} />
+              <span className="flex-1">{label}</span>
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  dark ? 'bg-white/5 text-laurelLeaf/60' : 'bg-celeste/60 text-laurelLeaf'
+                }`}
+              >
+                Em breve
+              </span>
+            </div>
+          ) : (
           <NavLink
             key={to}
             to={to}
@@ -109,7 +128,8 @@ export function Sidebar() {
               </>
             )}
           </NavLink>
-        ))}
+          )
+        )}
       </nav>
 
       <div className="relative mt-4">

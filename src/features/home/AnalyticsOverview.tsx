@@ -24,11 +24,9 @@ const eventStatusLabel: Record<string, string> = {
 }
 
 const antiCheatStatusLabel: Record<string, string> = {
-  pending: 'Pendente',
-  approved: 'Aprovado',
-  invalidated: 'Invalidado',
-  warned: 'Advertido',
-  banned: 'Banido',
+  pending_review: 'Pendente de revisão',
+  confirmed: 'Confirmado',
+  dismissed: 'Descartado',
 }
 
 const MONTH_NAMES = [
