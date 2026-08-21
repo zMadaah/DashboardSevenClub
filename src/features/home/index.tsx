@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card'
 import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
 import { RegionMap } from '../../components/charts/RegionMap'
 import { AnalyticsOverview } from './AnalyticsOverview'
+import { AnalyticsPage }from '../analytics'
 import { NotificationsPage } from '../notifications'
 import { useSubscriptionSummary } from './useSubscriptionSummary'
 import { useHomeSummary } from './useHomeSummary'
@@ -68,7 +69,7 @@ export function HomePage() {
       </div>
 
       {activeTab === 'Análises' ? (
-        <AnalyticsOverview />
+        <AnalyticsPage />
       ) : activeTab === 'Notificações' ? (
         <NotificationsPage />
       ) : (
