@@ -1,7 +1,18 @@
 import { apiFetch } from '../../lib/api'
 
+interface PaymentsSummaryResponse {
+  totalRevenue: number
+  paidCount: number
+  failuresToday: number
+  refundedCount: number
+}
+
 interface CountOnlyResponse {
   pagination: { total: number }
+}
+
+export async function fetchPaymentsSummary(token: string | null) {
+  return apiFetch<PaymentsSummaryResponse>('/payments/summary', token)
 }
 
 /** Conta tickets "novo" + "em andamento" — os dois estados que ainda precisam de atenção. */

@@ -1,22 +1,21 @@
 import { useState } from 'react'
-import { Ticket, CreditCard, ShieldAlert, Download, DollarSign } from 'lucide-react'
+import { Ticket, ShieldAlert, Download } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
+import { UserStatusDonut } from '../../components/charts/UserStatusDonut'
 import { RegionMap } from '../../components/charts/RegionMap'
 import { AnalyticsOverview } from './AnalyticsOverview'
 import { NotificationsPage } from '../notifications'
 import { useHomeSummary } from './useHomeSummary'
+import { useSubscriptionSummary } from './useSubscriptionSummary'
+import { useRecentPayments } from './useRecentPayments'
 import { useTheme } from '../../theme/ThemeContext'
 import { usersByRegion } from './mocks'
 
-// Cards que não têm API real ainda — pagamentos/receita dependem de
-// decisão de gateway (a integração Asaas foi removida por enquanto);
-// anti-cheat tem tabela mas a rota nunca foi construída. Fixos aqui, não
-// tentam buscar nada — mesmo tratamento visual das abas "Em breve".
-const COMING_SOON_CARDS = [
-  { label: 'Falhas de pagamento hoje', icon: CreditCard },
-  { label: 'Fila anti-cheat', icon: ShieldAlert },
-  { label: 'Receita total', icon: DollarSign },
-]
+// Anti-cheat ainda não tem API real (tem tabela, mas a rota nunca foi
+// construída) — único card que continua "Em breve" fixo. Pagamentos,
+// receita, status de assinatura e últimos pagamentos já são reais desde
+// que a integração com a Asaas ficou de pé.
+const COMING_SOON_CARDS = [{ label: 'Fila anti-cheat', icon: ShieldAlert }]
 
 const tabs = ['Visão geral', 'Análises', 'Relatórios', 'Notificações'] as const
 const enabledTabs: (typeof tabs)[number][] = ['Visão geral', 'Análises', 'Notificações']
@@ -26,6 +25,9 @@ export function HomePage() {
   const { theme } = useTheme()
   const dark = theme === 'dark'
   const { cards: summaryCards, isLoading: summaryLoading, error: summaryError } = useHomeSummary()
+  const { data: userStatusData, total: userStatusTotal, isLoading: statusLoading, error: statusError } =
+    useSubscriptionSummary()
+  const { payments: recentPayments, isLoading: paymentsLoading, error: paymentsError } = useRecentPayments()
 
   const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
 
@@ -108,18 +110,47 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <Card dark={dark} className="col-span-2 opacity-50">
+            <Card dark={dark} className="col-span-2">
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Usuários por status</h2>
-              <p className="text-sm text-laurelLeaf">
-                Em breve — depende do sistema de assinatura, ainda não definido.
-              </p>
+              {statusLoading ? (
+                <p className="text-sm text-laurelLeaf">Carregando...</p>
+              ) : statusError ? (
+                <p className="text-sm text-red-400">Não foi possível carregar: {statusError}</p>
+              ) : (
+                <UserStatusDonut data={userStatusData} total={userStatusTotal} dark={dark} />
+              )}
             </Card>
 
-            <Card dark={dark} className="opacity-50">
+            <Card dark={dark}>
               <h2 className="mb-4 text-sm font-medium text-laurelLeaf">Últimos pagamentos</h2>
-              <p className="text-sm text-laurelLeaf">
-                Em breve — depende da escolha do gateway de pagamento.
-              </p>
+              {paymentsLoading ? (
+                <p className="text-sm text-laurelLeaf">Carregando...</p>
+              ) : paymentsError ? (
+                <p className="text-sm text-red-400">Não foi possível carregar: {paymentsError}</p>
+              ) : recentPayments.length === 0 ? (
+                <p className="text-sm text-laurelLeaf">Nenhum pagamento recente.</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {recentPayments.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laurelLeaf/20 text-xs font-semibold ${textPrimary}`}
+                        >
+                          {p.initials}
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className={`text-sm ${textPrimary}`}>{p.name}</span>
+                          <span className="text-xs text-laurelLeaf">{p.gateway}</span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-pear">
+                        +R$ {p.amount.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 

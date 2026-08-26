@@ -1,6 +1,6 @@
 export type UserStatus = 'active' | 'inactive' | 'suspended'
 export type UserRole = 'admin' | 'manager' | 'subscriber'
-export type PaymentStatus = 'success' | 'failed' | 'refunded' | 'disputed'
+export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded'
 export type TicketStatus = 'new' | 'in_progress' | 'resolved'
 export type AntiCheatStatus = 'pending' | 'approved' | 'invalidated' | 'warned' | 'banned'
 export interface SummaryCard {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Users, Percent, Clock, ChevronDown } from 'lucide-react'
+import { Activity, Users, Percent, Clock, ChevronDown, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import {
   AreaChart,
   Area,
@@ -10,9 +10,29 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { Card } from '../../components/ui/Card'
+import { Table, TableHead, TableRow, TableCell } from '../../components/ui/Table'
+import { Badge } from '../../components/ui/Badge'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { useTheme } from '../../theme/ThemeContext'
+import { useAuth } from '../../auth/AuthContext'
 import { useAnalyticsOverview } from './useAnalyticsOverview'
 import { AnalyticsRange, StatusCounts } from './analyticsApi'
+import { useActivities } from '../analytics/useActivities'
+import { deleteActivity } from '../analytics/api'
+import { formatDateTime } from '../../lib/format'
+
+const ACTIVITIES_PAGE_SIZE = 10
+
+function formatDistance(meters: number): string {
+  return `${(meters / 1000).toFixed(2)} km`
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}min`
+  return `${m}min`
+}
 
 const statIcons = [Activity, Users, Percent, Clock]
 
@@ -111,6 +131,31 @@ export function AnalyticsOverview() {
   const selectedRange = rangeOptions.find((o) => o.value === rangeValue) ?? rangeOptions[0]
 
   const { data, isLoading, error } = useAnalyticsOverview(selectedRange.range)
+
+  const { token } = useAuth()
+  const [activitiesType, setActivitiesType] = useState<'run' | 'ride'>('run')
+  const [activitiesPage, setActivitiesPage] = useState(1)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const {
+    activities,
+    pagination: activitiesPagination,
+    isLoading: activitiesLoading,
+    error: activitiesError,
+    refetch: refetchActivities,
+  } = useActivities({ page: activitiesPage, pageSize: ACTIVITIES_PAGE_SIZE, activityType: activitiesType })
+
+  async function handleDeleteActivity(activityId: string, activityName: string) {
+    if (!window.confirm(`Apagar a atividade "${activityName}"? Não reverte território já capturado.`)) return
+    setDeletingId(activityId)
+    try {
+      await deleteActivity(activityId, token)
+      await refetchActivities()
+    } catch {
+      window.alert('Não foi possível apagar essa atividade.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   // No fundo claro, as cores "apagadas" (pear muito claro, laurelLeaf acinzentado)
   // perdem contraste contra o branco — usamos tons mais escuros só nesse caso.
@@ -259,6 +304,109 @@ export function AnalyticsOverview() {
           <StatusBars counts={data.antiCheatByStatus} labels={antiCheatStatusLabel} dark={dark} />
         </Card>
       </div>
+
+      <Card dark={dark}>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className={`text-sm font-medium ${textPrimary}`}>Atividades registradas</h2>
+            <p className="text-xs text-laurelLeaf">Corridas e pedaladas de todos os usuários</p>
+          </div>
+          <div className={`flex gap-1 rounded-lg border p-1 ${dark ? 'border-surfaceBorder bg-richBlack' : 'border-celeste bg-white'}`}>
+            {(['run', 'ride'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  setActivitiesType(type)
+                  setActivitiesPage(1)
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activitiesType === type
+                    ? 'bg-pear text-richBlack'
+                    : dark
+                      ? 'text-laurelLeaf hover:text-ceilingWhite'
+                      : 'text-laurelLeaf hover:text-richBlack'
+                }`}
+              >
+                {type === 'run' ? 'Corrida' : 'Pedal'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activitiesError && <p className="mb-2 text-sm text-red-400">{activitiesError}</p>}
+
+        {!activitiesLoading && activities.length === 0 ? (
+          <EmptyState message="Nenhuma atividade registrada com esse filtro ainda." dark={dark} />
+        ) : (
+          <Table dark={dark}>
+            <TableHead dark={dark}>
+              <TableRow dark={dark}>
+                <TableCell className="font-medium">Usuário</TableCell>
+                <TableCell className="font-medium">Atividade</TableCell>
+                <TableCell className="font-medium">Distância</TableCell>
+                <TableCell className="font-medium">Duração</TableCell>
+                <TableCell className="font-medium">Território capturado</TableCell>
+                <TableCell className="font-medium">Loop fechado</TableCell>
+                <TableCell className="font-medium">Data</TableCell>
+                <TableCell className="font-medium">Ação</TableCell>
+              </TableRow>
+            </TableHead>
+            <tbody>
+              {activities.map((a) => (
+                <TableRow key={a.id} dark={dark}>
+                  <TableCell>{a.userName}</TableCell>
+                  <TableCell>{a.name}</TableCell>
+                  <TableCell>{formatDistance(a.distanceMeters)}</TableCell>
+                  <TableCell>{formatDuration(a.durationSeconds)}</TableCell>
+                  <TableCell>{a.captureM2 > 0 ? `${a.captureM2.toFixed(0)} m²` : '—'}</TableCell>
+                  <TableCell>
+                    <Badge label={a.loopClosed ? 'Sim' : 'Não'} tone={a.loopClosed ? 'success' : 'neutral'} />
+                  </TableCell>
+                  <TableCell>{formatDateTime(a.createdAt)}</TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteActivity(a.id, a.name)}
+                      disabled={deletingId === a.id}
+                      title="Apagar atividade"
+                      className="rounded-md p-1.5 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-40"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </tbody>
+          </Table>
+        )}
+
+        {activitiesPagination.totalPages > 1 && (
+          <div className="mt-3 flex items-center justify-between text-sm text-laurelLeaf">
+            <span>
+              Página {activitiesPagination.page} de {activitiesPagination.totalPages} — {activitiesPagination.total} atividades
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setActivitiesPage((p) => Math.max(1, p - 1))}
+                disabled={activitiesPage <= 1}
+                className="rounded-md border border-celeste p-1.5 disabled:opacity-40"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivitiesPage((p) => Math.min(activitiesPagination.totalPages, p + 1))}
+                disabled={activitiesPage >= activitiesPagination.totalPages}
+                className="rounded-md border border-celeste p-1.5 disabled:opacity-40"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

@@ -35,9 +35,9 @@ export function Sidebar() {
     navigate('/login', { replace: true })
   }
 
-  const navItems = [
+  const navItems: { to: string; label: string; icon: typeof Home; badge?: number; disabled?: boolean }[] = [
     { to: '/', label: 'Home', icon: Home },
-    { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard, disabled: true },
+    { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
     { to: '/usuarios', label: 'Usuários', icon: Users },
     { to: '/chat', label: 'Suporte de chat', icon: MessageSquare, badge: openChatsCount },
     { to: '/eventos', label: 'Evento', icon: Trophy },

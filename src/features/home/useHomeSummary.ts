@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../lib/api'
-import { fetchOpenTicketsCount } from './api'
+import { fetchOpenTicketsCount, fetchPaymentsSummary } from './api'
 import { SummaryCard } from './types'
 
-// Pagamentos, anti-cheat e receita ainda não têm API real (pagamentos
-// depende de decisão de gateway; anti-cheat tem tabela mas a rota nunca
-// foi construída) — só busca o que dá pra calcular de verdade hoje.
-// Os cards "Em breve" correspondentes ficam fixos direto no componente,
-// não tentam mais chamar rota nenhuma.
+// Anti-cheat ainda não tem API real (tem tabela, mas a rota nunca foi
+// construída) — só esse card continua "Em breve" fixo. Pagamentos e
+// receita já têm dado real desde que a integração com a Asaas ficou de
+// pé.
 export function useHomeSummary() {
   const { token } = useAuth()
   const [cards, setCards] = useState<SummaryCard[]>([])
@@ -19,11 +18,17 @@ export function useHomeSummary() {
     let cancelled = false
     setIsLoading(true)
 
-    fetchOpenTicketsCount(token)
-      .then((openTickets) => {
+    Promise.all([fetchOpenTicketsCount(token), fetchPaymentsSummary(token)])
+      .then(([openTickets, payments]) => {
         if (cancelled) return
         setCards([
           { label: 'Tickets de suporte abertos', value: openTickets, trend: 'novos + em andamento' },
+          { label: 'Falhas de pagamento hoje', value: payments.failuresToday, trend: 'últimas 24h' },
+          {
+            label: 'Receita total',
+            value: `R$ ${payments.totalRevenue.toFixed(2).replace('.', ',')}`,
+            trend: `${payments.paidCount} pagamentos confirmados`,
+          },
         ])
         setError(null)
       })
