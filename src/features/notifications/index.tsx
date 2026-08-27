@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { Send, Clock } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Send, Clock, Search, Loader2 } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { useTheme } from '../../theme/ThemeContext'
+import { useAuth } from '../../auth/AuthContext'
 import { notificationHistory, audienceLabel, estimatedReach } from './mocks'
 import { NotificationAudience, NotificationStatus, NotificationRecord } from './types'
+import { listUsers, sendTestNotification } from '../users/api'
+import { SupportUser } from '../users/types'
 
 const audienceOptions: { value: NotificationAudience; label: string }[] = [
   { value: 'all', label: 'Todos os usuários' },
@@ -48,6 +51,63 @@ export function NotificationsPage() {
   const [sending, setSending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
     const [logoError, setLogoError] = useState(false)
+
+  // --- Testar com um usuário específico — a mesma função real que já
+  // existia em Usuários (POST /notifications/send-test), trazida pra cá.
+  // O envio em massa acima continua simulado, já que a API ainda não
+  // suporta público-alvo segmentado (todos/assinantes/etc) — só entrega
+  // pra um usuário por vez.
+  const { token } = useAuth()
+  const [testQuery, setTestQuery] = useState('')
+  const [testResults, setTestResults] = useState<SupportUser[]>([])
+  const [searchingTestUser, setSearchingTestUser] = useState(false)
+  const [testUser, setTestUser] = useState<SupportUser | null>(null)
+  const [testTitle, setTestTitle] = useState('Seven Club')
+  const [testBody, setTestBody] = useState('Essa é uma notificação de teste enviada pelo dashboard.')
+  const [testSending, setTestSending] = useState(false)
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    if (testQuery.trim().length < 2 || testUser) {
+      setTestResults([])
+      return
+    }
+    let cancelled = false
+    setSearchingTestUser(true)
+    const timeout = setTimeout(() => {
+      listUsers({ query: testQuery, page: 1, pageSize: 5 }, token)
+        .then((result) => {
+          if (!cancelled) setTestResults(result.users)
+        })
+        .catch(() => {
+          if (!cancelled) setTestResults([])
+        })
+        .finally(() => {
+          if (!cancelled) setSearchingTestUser(false)
+        })
+    }, 300)
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+    }
+  }, [testQuery, testUser, token])
+
+  async function handleSendTest() {
+    if (!testUser) return
+    setTestSending(true)
+    setTestResult(null)
+    try {
+      await sendTestNotification(testUser.id, testTitle, testBody, token)
+      setTestResult({ ok: true, message: `Notificação enviada para ${testUser.firstName || testUser.username}.` })
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        message: err instanceof Error ? err.message : 'Não foi possível enviar.',
+      })
+    } finally {
+      setTestSending(false)
+    }
+  }
 
   async function handleSend() {
     if (!title.trim() || !message.trim()) {
@@ -220,6 +280,119 @@ export function NotificationsPage() {
           </p>
         </Card>
       </div>
+
+      <Card dark={dark}>
+        <div className="mb-1 flex items-center gap-2">
+          <h2 className={`text-sm font-medium ${textPrimary}`}>Testar com um usuário</h2>
+          <Badge label="Real" tone="success" />
+        </div>
+        <p className="mb-4 text-xs text-laurelLeaf">
+          Envia de verdade, direto pro celular de uma pessoa específica — útil pra validar
+          que o caminho completo funciona antes de mandar em massa (que ainda é simulado
+          acima, até existir uma API real de público-alvo).
+        </p>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={`text-sm font-medium ${textPrimary}`}>Usuário</span>
+              {testUser ? (
+                <div
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
+                    dark ? 'border-surfaceBorder bg-richBlack' : 'border-celeste bg-ceilingWhite'
+                  }`}
+                >
+                  <span className={textPrimary}>
+                    {testUser.firstName || testUser.username} — {testUser.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTestUser(null)
+                      setTestQuery('')
+                      setTestResult(null)
+                    }}
+                    className="text-xs text-laurelLeaf hover:text-current"
+                  >
+                    Trocar
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-laurelLeaf" />
+                  <input
+                    value={testQuery}
+                    onChange={(e) => setTestQuery(e.target.value)}
+                    placeholder="Busca por nome, usuário ou e-mail..."
+                    className={`${inputClass} pl-8`}
+                  />
+                  {searchingTestUser && (
+                    <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-laurelLeaf" />
+                  )}
+                  {testResults.length > 0 && (
+                    <div
+                      className={`absolute z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg ${
+                        dark ? 'border-surfaceBorder bg-surface' : 'border-celeste bg-white'
+                      }`}
+                    >
+                      {testResults.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => {
+                            setTestUser(u)
+                            setTestResults([])
+                          }}
+                          className={`block w-full px-3 py-2 text-left text-sm hover:bg-pear/10 ${textPrimary}`}
+                        >
+                          {u.firstName || u.username} <span className="text-xs text-laurelLeaf">— {u.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={`text-sm font-medium ${textPrimary}`}>Título</span>
+              <input value={testTitle} onChange={(e) => setTestTitle(e.target.value)} className={inputClass} />
+            </label>
+          </div>
+
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <span className={`text-sm font-medium ${textPrimary}`}>Mensagem</span>
+            <textarea
+              value={testBody}
+              onChange={(e) => setTestBody(e.target.value)}
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+        </div>
+
+        {testResult && (
+          <p className={`mt-3 text-xs ${testResult.ok ? 'text-green-500' : 'text-red-500'}`}>{testResult.message}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleSendTest}
+          disabled={!testUser || testSending || !testTitle.trim() || !testBody.trim()}
+          className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-pear px-4 py-2 text-sm font-medium text-pear transition-colors hover:bg-pear/10 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Send size={14} />
+          {testSending ? 'Enviando...' : 'Enviar notificação de teste'}
+        </button>
+
+        <p className="mt-2 text-[11px] text-laurelLeaf">
+          Só funciona se esse usuário já tiver aberto o app com permissão de notificação
+          concedida — sem isso, não existe token registrado, mas fica salva no histórico
+          dela mesmo assim.
+        </p>
+      </Card>
 
       <Card dark={dark}>
         <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Histórico</h2>
