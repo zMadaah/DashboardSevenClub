@@ -8,6 +8,7 @@ import {
   Trophy,
   ShieldAlert,
   BarChart3,
+  RotateCcw,
   ChevronsUpDown,
   LogOut,
   Moon,
@@ -41,6 +42,7 @@ export function Sidebar() {
     { to: '/usuarios', label: 'Usuários', icon: Users },
     { to: '/chat', label: 'Suporte de chat', icon: MessageSquare, badge: openChatsCount },
     { to: '/eventos', label: 'Evento', icon: Trophy },
+    { to: '/temporada', label: 'Temporada', icon: RotateCcw },
     { to: '/anti-cheat', label: 'Anti-cheat', icon: ShieldAlert },
     { to: '/analises', label: 'Análises', icon: BarChart3 },
   ]

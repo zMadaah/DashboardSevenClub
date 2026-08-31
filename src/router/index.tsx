@@ -7,6 +7,7 @@ import { PaymentsPage } from '../features/payments'
 import { UsersPage } from '../features/users'
 import { ChatPage } from '../features/chat'
 import { EventsPage } from '../features/events'
+import { SeasonPage } from '../features/season'
 import { AntiCheatPage } from '../features/anticheat'
 import { AnalyticsPage } from '../features/analytics'
 
@@ -22,6 +23,7 @@ export function AppRouter() {
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/eventos" element={<EventsPage />} />
+          <Route path="/temporada" element={<SeasonPage />} />
           <Route path="/anti-cheat" element={<AntiCheatPage />} />
           <Route path="/analises" element={<AnalyticsPage />} />
         </Route>
