@@ -6,9 +6,9 @@ import { SupportUser } from './types'
 import { UserRole } from '../../types'
 
 const roleOptions: { value: UserRole; label: string }[] = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'manager', label: 'Gerente' },
+  { value: 'free', label: 'Free' },
   { value: 'subscriber', label: 'Assinante' },
+  { value: 'influencer', label: 'Influencer' },
 ]
 
 interface EditUserModalProps {

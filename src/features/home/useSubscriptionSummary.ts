@@ -14,6 +14,7 @@ const STATUS_COLOR: Record<string, string> = {
   canceled: '#D85A30',
   past_due: '#E8B339',
   expired: '#5C6660',
+  influencer: '#7B61FF',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -22,6 +23,7 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: 'Cancelado',
   past_due: 'Pagamento atrasado',
   expired: 'Expirado',
+  influencer: 'Influencer',
 }
 
 export function useSubscriptionSummary() {

@@ -25,15 +25,15 @@ const statusLabel: Record<UserStatus, string> = {
 }
 
 const roleTone: Record<UserRole, 'warning' | 'neutral' | 'success'> = {
-  admin: 'warning',
-  manager: 'neutral',
+  free: 'neutral',
   subscriber: 'success',
+  influencer: 'warning',
 }
 
 const roleLabel: Record<UserRole, string> = {
-  admin: 'Admin',
-  manager: 'Gerente',
+  free: 'Free',
   subscriber: 'Assinante',
+  influencer: 'Influencer',
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
@@ -182,9 +182,9 @@ export function UsersPage() {
             className={selectClass}
           >
             <option value="all">Todos os roles</option>
-            <option value="admin">Admin</option>
-            <option value="manager">Gerente</option>
+            <option value="free">Free</option>
             <option value="subscriber">Assinante</option>
+            <option value="influencer">Influencer</option>
           </select>
           <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-laurelLeaf" />
         </div>

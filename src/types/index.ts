@@ -1,5 +1,8 @@
 export type UserStatus = 'active' | 'inactive' | 'suspended'
-export type UserRole = 'admin' | 'manager' | 'subscriber'
+// Valores reais do app_users.role — antes esse tipo tinha valores de um
+// design anterior (admin/manager/subscriber) que nunca bateram com o
+// que o backend realmente salva.
+export type UserRole = 'free' | 'subscriber' | 'influencer'
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded'
 export type TicketStatus = 'new' | 'in_progress' | 'resolved'
 export type AntiCheatStatus = 'pending' | 'approved' | 'invalidated' | 'warned' | 'banned'
