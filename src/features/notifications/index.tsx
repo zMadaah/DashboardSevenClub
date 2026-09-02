@@ -7,8 +7,15 @@ import { useAuth } from '../../auth/AuthContext'
 import { formatDateTime } from '../../lib/format'
 import { listUsers, sendTestNotification } from '../users/api'
 import { SupportUser } from '../users/types'
-import { getNotificationsHistory, NotificationHistoryItem } from './api'
+import { getNotificationsHistory, NotificationHistoryItem, AudienceCategory, getAudienceCount, broadcastToCategory } from './api'
 import { ApiError } from '../../lib/api'
+
+const AUDIENCE_OPTIONS: { value: AudienceCategory; label: string }[] = [
+  { value: 'free', label: 'Free' },
+  { value: 'subscriber', label: 'Assinante' },
+  { value: 'influencer', label: 'Influencer' },
+  { value: 'cancelled', label: 'Cancelado' },
+]
 
 const CATEGORY_LABEL: Record<string, string> = {
   territory: 'Território',
@@ -33,12 +40,54 @@ export function NotificationsPage() {
     dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
   }`
 
+  // --- Enviar por categoria — segmentos reais (free/subscriber/
+  // influencer/cancelled), não um "todos os usuários" solto como
+  // antes. Mandar um por um levaria muito tempo com milhares de
+  // usuários, por isso isso dispara em lote de verdade (Expo aceita
+  // até 100 push por requisição).
+  const [broadcastCategory, setBroadcastCategory] = useState<AudienceCategory>('free')
+  const [broadcastTitle, setBroadcastTitle] = useState('')
+  const [broadcastBody, setBroadcastBody] = useState('')
+  const [audienceCount, setAudienceCount] = useState<number | null>(null)
+  const [loadingCount, setLoadingCount] = useState(true)
+  const [broadcasting, setBroadcasting] = useState(false)
+  const [broadcastResult, setBroadcastResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    setLoadingCount(true)
+    getAudienceCount(broadcastCategory, token)
+      .then((res) => setAudienceCount(res.count))
+      .catch(() => setAudienceCount(null))
+      .finally(() => setLoadingCount(false))
+  }, [broadcastCategory, token])
+
+  async function handleBroadcast() {
+    if (!broadcastTitle.trim() || !broadcastBody.trim()) return
+    setBroadcasting(true)
+    setBroadcastResult(null)
+    try {
+      const res = await broadcastToCategory(broadcastCategory, broadcastTitle, broadcastBody, token)
+      setBroadcastResult({
+        ok: true,
+        message: `Enviado pra ${res.recipientCount.toLocaleString('pt-BR')} usuários (${res.pushTokensFound.toLocaleString('pt-BR')} com push registrado — os demais recebem só no histórico do app).`,
+      })
+      setBroadcastTitle('')
+      setBroadcastBody('')
+      loadHistory()
+    } catch (err) {
+      setBroadcastResult({
+        ok: false,
+        message: err instanceof ApiError ? err.message : 'Não foi possível enviar.',
+      })
+    } finally {
+      setBroadcasting(false)
+    }
+  }
+
   // --- Testar com um usuário específico — POST /notifications/send-test
-  // real. Único jeito de disparar notificação por aqui hoje — não existe
-  // envio em massa de verdade (precisaria de uma rota staff nova que
-  // filtre público-alvo, o que arriscaria conflitar com o time de
-  // suporte se qualquer staff pudesse disparar pra todo mundo sem
-  // controle — por isso foi removido daqui, não substituído).
+  // real. Complementa o envio por categoria acima pra validar o caminho
+  // completo (push chegando de verdade) numa conta específica antes de
+  // confiar num broadcast maior.
   const [testQuery, setTestQuery] = useState('')
   const [testResults, setTestResults] = useState<SupportUser[]>([])
   const [searchingTestUser, setSearchingTestUser] = useState(false)
@@ -117,6 +166,79 @@ export function NotificationsPage() {
           Teste o envio pra uma pessoa específica, e acompanhe o que já foi entregue
         </p>
       </div>
+
+      <Card dark={dark}>
+        <h2 className={`text-sm font-medium ${textPrimary}`}>Enviar por categoria</h2>
+        <p className="mb-4 text-xs text-laurelLeaf">
+          Segmentos reais do sistema — não é "todos os usuários" solto, é uma categoria
+          bem definida (role ou status de assinatura).
+        </p>
+
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className={`text-sm font-medium ${textPrimary}`}>Categoria</span>
+            <select
+              value={broadcastCategory}
+              onChange={(e) => setBroadcastCategory(e.target.value as AudienceCategory)}
+              className={`${inputClass} appearance-none`}
+            >
+              {AUDIENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-laurelLeaf">
+              {loadingCount
+                ? 'Contando usuários...'
+                : audienceCount !== null
+                  ? `Alcance real: ${audienceCount.toLocaleString('pt-BR')} usuários`
+                  : 'Não foi possível calcular o alcance.'}
+            </span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={`text-sm font-medium ${textPrimary}`}>Título</span>
+            <input
+              value={broadcastTitle}
+              onChange={(e) => setBroadcastTitle(e.target.value)}
+              maxLength={50}
+              placeholder="Ex: Novo desafio disponível!"
+              className={inputClass}
+            />
+            <span className="text-right text-[10px] text-laurelLeaf">{broadcastTitle.length}/50</span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={`text-sm font-medium ${textPrimary}`}>Mensagem</span>
+            <textarea
+              value={broadcastBody}
+              onChange={(e) => setBroadcastBody(e.target.value)}
+              maxLength={150}
+              rows={3}
+              placeholder="Escreva a mensagem que vai aparecer na notificação..."
+              className={`${inputClass} resize-none`}
+            />
+            <span className="text-right text-[10px] text-laurelLeaf">{broadcastBody.length}/150</span>
+          </label>
+
+          {broadcastResult && (
+            <p className={`text-sm ${broadcastResult.ok ? 'text-green-500' : 'text-red-500'}`}>
+              {broadcastResult.message}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleBroadcast}
+            disabled={broadcasting || !broadcastTitle.trim() || !broadcastBody.trim()}
+            className="flex items-center justify-center gap-2 rounded-lg bg-pear px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-pear/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Send size={14} />
+            {broadcasting ? 'Enviando...' : 'Enviar agora'}
+          </button>
+        </div>
+      </Card>
 
       <Card dark={dark}>
         <div className="mb-1 flex items-center gap-2">
