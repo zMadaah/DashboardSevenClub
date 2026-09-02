@@ -1,63 +1,44 @@
 import { useEffect, useState } from 'react'
-import { Send, Clock, Search, Loader2 } from 'lucide-react'
+import { Send, Search, Loader2, Bell } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { useTheme } from '../../theme/ThemeContext'
 import { useAuth } from '../../auth/AuthContext'
-import { notificationHistory, audienceLabel, estimatedReach } from './mocks'
-import { NotificationAudience, NotificationStatus, NotificationRecord } from './types'
+import { formatDateTime } from '../../lib/format'
 import { listUsers, sendTestNotification } from '../users/api'
 import { SupportUser } from '../users/types'
+import { getNotificationsHistory, NotificationHistoryItem } from './api'
+import { ApiError } from '../../lib/api'
 
-const audienceOptions: { value: NotificationAudience; label: string }[] = [
-  { value: 'all', label: 'Todos os usuários' },
-  { value: 'subscribers', label: 'Assinantes' },
-  { value: 'free', label: 'Free' },
-  { value: 'cancelled', label: 'Cancelados' },
-  { value: 'inactive', label: 'Usuários inativos' },
-]
-
-const statusTone: Record<NotificationStatus, 'success' | 'warning' | 'neutral'> = {
-  sent: 'success',
-  scheduled: 'warning',
-  draft: 'neutral',
+const CATEGORY_LABEL: Record<string, string> = {
+  territory: 'Território',
+  invite: 'Convite',
+  community: 'Comunidade',
+  sevenclub: 'Seven Club',
 }
 
-const statusLabel: Record<NotificationStatus, string> = {
-  sent: 'Enviada',
-  scheduled: 'Agendada',
-  draft: 'Rascunho',
+const CATEGORY_TONE: Record<string, 'success' | 'warning' | 'neutral'> = {
+  territory: 'warning',
+  invite: 'success',
+  community: 'neutral',
+  sevenclub: 'neutral',
 }
 
 export function NotificationsPage() {
   const { theme } = useTheme()
+  const { token } = useAuth()
   const dark = theme === 'dark'
   const textPrimary = dark ? 'text-ceilingWhite' : 'text-richBlack'
   const inputClass = `w-full rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-laurelLeaf/60 focus:border-pear ${
     dark ? 'border-surfaceBorder bg-richBlack text-ceilingWhite' : 'border-celeste bg-ceilingWhite text-richBlack'
   }`
-  const activeToggle = 'rounded-md bg-pear px-3 py-1.5 text-sm font-medium text-richBlack'
-  const inactiveToggle = `rounded-md border px-3 py-1.5 text-sm font-medium text-laurelLeaf transition-colors ${
-    dark ? 'border-surfaceBorder hover:text-ceilingWhite' : 'border-celeste hover:text-richBlack'
-  }`
 
-  const [history, setHistory] = useState<NotificationRecord[]>(notificationHistory)
-  const [title, setTitle] = useState('')
-  const [message, setMessage] = useState('')
-  const [audience, setAudience] = useState<NotificationAudience>('all')
-  const [sendMode, setSendMode] = useState<'now' | 'schedule'>('now')
-  const [scheduleDate, setScheduleDate] = useState('')
-  const [scheduleTime, setScheduleTime] = useState('')
-  const [sending, setSending] = useState(false)
-  const [feedback, setFeedback] = useState<string | null>(null)
-    const [logoError, setLogoError] = useState(false)
-
-  // --- Testar com um usuário específico — a mesma função real que já
-  // existia em Usuários (POST /notifications/send-test), trazida pra cá.
-  // O envio em massa acima continua simulado, já que a API ainda não
-  // suporta público-alvo segmentado (todos/assinantes/etc) — só entrega
-  // pra um usuário por vez.
-  const { token } = useAuth()
+  // --- Testar com um usuário específico — POST /notifications/send-test
+  // real. Único jeito de disparar notificação por aqui hoje — não existe
+  // envio em massa de verdade (precisaria de uma rota staff nova que
+  // filtre público-alvo, o que arriscaria conflitar com o time de
+  // suporte se qualquer staff pudesse disparar pra todo mundo sem
+  // controle — por isso foi removido daqui, não substituído).
   const [testQuery, setTestQuery] = useState('')
   const [testResults, setTestResults] = useState<SupportUser[]>([])
   const [searchingTestUser, setSearchingTestUser] = useState(false)
@@ -66,6 +47,23 @@ export function NotificationsPage() {
   const [testBody, setTestBody] = useState('Essa é uma notificação de teste enviada pelo dashboard.')
   const [testSending, setTestSending] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  // --- Histórico real (antes era mock local, nunca buscava do backend)
+  const [history, setHistory] = useState<NotificationHistoryItem[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+
+  function loadHistory() {
+    setHistoryLoading(true)
+    getNotificationsHistory(1, token)
+      .then((res) => setHistory(res.notifications))
+      .catch((err: unknown) => setHistoryError(err instanceof ApiError ? err.message : 'Erro ao carregar'))
+      .finally(() => setHistoryLoading(false))
+  }
+
+  useEffect(() => {
+    loadHistory()
+  }, [])
 
   useEffect(() => {
     if (testQuery.trim().length < 2 || testUser) {
@@ -99,6 +97,8 @@ export function NotificationsPage() {
     try {
       await sendTestNotification(testUser.id, testTitle, testBody, token)
       setTestResult({ ok: true, message: `Notificação enviada para ${testUser.firstName || testUser.username}.` })
+      // recarrega o histórico — o envio de teste já grava lá também
+      loadHistory()
     } catch (err) {
       setTestResult({
         ok: false,
@@ -109,176 +109,13 @@ export function NotificationsPage() {
     }
   }
 
-  async function handleSend() {
-    if (!title.trim() || !message.trim()) {
-      setFeedback('Preencha título e mensagem antes de enviar.')
-      return
-    }
-    if (sendMode === 'schedule' && (!scheduleDate || !scheduleTime)) {
-      setFeedback('Escolha data e hora para agendar.')
-      return
-    }
-
-    setSending(true)
-    setFeedback(null)
-    // Simula o envio até existir uma API real (POST /notifications).
-    await new Promise((resolve) => setTimeout(resolve, 600))
-
-    const record: NotificationRecord = {
-      id: `ntf_${Math.random().toString(36).slice(2, 8)}`,
-      title,
-      message,
-      audience,
-      status: sendMode === 'now' ? 'sent' : 'scheduled',
-      reach: estimatedReach[audience],
-      date: sendMode === 'now' ? 'agora mesmo' : `${scheduleDate} ${scheduleTime}`,
-    }
-
-    setHistory((prev) => [record, ...prev])
-    setSending(false)
-    setFeedback(sendMode === 'now' ? 'Notificação enviada!' : 'Notificação agendada!')
-    setTitle('')
-    setMessage('')
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-4">
-        <Card dark={dark} className="col-span-2">
-          <h2 className={`text-sm font-medium ${textPrimary}`}>Nova notificação</h2>
-          <p className="mb-4 text-xs text-laurelLeaf">Envie um push para os usuários do app</p>
-
-          <div className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className={`text-sm font-medium ${textPrimary}`}>Título</span>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={50}
-                placeholder="Ex: Novo desafio disponível!"
-                className={inputClass}
-              />
-              <span className="text-right text-[10px] text-laurelLeaf">{title.length}/50</span>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={`text-sm font-medium ${textPrimary}`}>Mensagem</span>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                maxLength={150}
-                rows={3}
-                placeholder="Escreva a mensagem que vai aparecer na notificação..."
-                className={`${inputClass} resize-none`}
-              />
-              <span className="text-right text-[10px] text-laurelLeaf">{message.length}/150</span>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={`text-sm font-medium ${textPrimary}`}>Público-alvo</span>
-              <select
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as NotificationAudience)}
-                className={`${inputClass} appearance-none`}
-              >
-                {audienceOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-laurelLeaf">
-                Alcance estimado: {estimatedReach[audience].toLocaleString('pt-BR')} usuários
-              </span>
-            </label>
-
-            <div className="flex flex-col gap-2">
-              <span className={`text-sm font-medium ${textPrimary}`}>Quando enviar</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSendMode('now')}
-                  className={sendMode === 'now' ? activeToggle : inactiveToggle}
-                >
-                  Agora
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSendMode('schedule')}
-                  className={sendMode === 'schedule' ? activeToggle : inactiveToggle}
-                >
-                  Agendar
-                </button>
-              </div>
-              {sendMode === 'schedule' && (
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    className={inputClass}
-                  />
-                  <input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              )}
-            </div>
-
-            {feedback && <p className="text-sm text-pear">{feedback}</p>}
-
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={sending}
-              className="flex items-center justify-center gap-2 rounded-lg bg-pear px-4 py-2 text-sm font-medium text-richBlack transition-colors hover:bg-pear/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {sendMode === 'now' ? <Send size={14} /> : <Clock size={14} />}
-              {sending ? 'Enviando...' : sendMode === 'now' ? 'Enviar agora' : 'Agendar notificação'}
-            </button>
-          </div>
-        </Card>
-
-        {/* A pré-visualização simula uma notificação real de celular — fica sempre
-            clara de propósito, independente do tema do dashboard (é assim que
-            aparece na tela de bloqueio, não no dashboard em si). */}
-        <Card dark={dark}>
-          <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Pré-visualização x</h2>
-          <div className="rounded-2xl bg-black/30 p-4">
-            <div className="flex items-start gap-3 rounded-xl bg-white/95 p-3 shadow-lg">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
-          {logoError ? (
-            '7C'
-          ) : (
-            <img
-              src="/logo.jpg"
-              alt="Seven Club"
-              className="h-6 w-6 object-contain"
-              onError={() => setLogoError(true)}
-            />
-          )}
-        </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-richBlack">Seven Club</span>
-                  <span className="text-[10px] text-laurelLeaf">agora</span>
-                </div>
-                <p className="truncate text-sm font-medium text-richBlack">
-                  {title || 'Título da notificação'}
-                </p>
-                <p className="line-clamp-2 text-xs text-laurelLeaf">
-                  {message || 'A mensagem aparece aqui conforme você digita...'}
-                </p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-laurelLeaf">
-            Assim é como a notificação aparece na tela de bloqueio do usuário.
-          </p>
-        </Card>
+      <div>
+        <h1 className={`text-xl font-semibold ${textPrimary}`}>Notificações</h1>
+        <p className="text-sm text-laurelLeaf">
+          Teste o envio pra uma pessoa específica, e acompanhe o que já foi entregue
+        </p>
       </div>
 
       <Card dark={dark}>
@@ -287,9 +124,7 @@ export function NotificationsPage() {
           <Badge label="Real" tone="success" />
         </div>
         <p className="mb-4 text-xs text-laurelLeaf">
-          Envia de verdade, direto pro celular de uma pessoa específica — útil pra validar
-          que o caminho completo funciona antes de mandar em massa (que ainda é simulado
-          acima, até existir uma API real de público-alvo).
+          Envia de verdade, direto pro celular de uma pessoa específica.
         </p>
 
         <div className="grid grid-cols-2 gap-4">
@@ -396,22 +231,31 @@ export function NotificationsPage() {
 
       <Card dark={dark}>
         <h2 className={`mb-4 text-sm font-medium ${textPrimary}`}>Histórico</h2>
-        <div className={`flex flex-col divide-y ${dark ? 'divide-white/5' : 'divide-celeste'}`}>
-          {history.map((n) => (
-            <div key={n.id} className="flex items-center gap-4 py-3">
-              <div className="min-w-0 flex-1">
-                <p className={`truncate text-sm font-medium ${textPrimary}`}>{n.title}</p>
-                <p className="truncate text-xs text-laurelLeaf">{n.message}</p>
+
+        {historyLoading ? (
+          <p className="text-sm text-laurelLeaf">Carregando...</p>
+        ) : historyError ? (
+          <p className="text-sm text-red-500">{historyError}</p>
+        ) : history.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <Bell size={24} className="text-laurelLeaf" />
+            <p className="text-sm text-laurelLeaf">Nenhuma notificação enviada ainda.</p>
+          </div>
+        ) : (
+          <div className={`flex flex-col divide-y ${dark ? 'divide-white/5' : 'divide-celeste'}`}>
+            {history.map((n) => (
+              <div key={n.id} className="flex items-center gap-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm font-medium ${textPrimary}`}>{n.title}</p>
+                  <p className="truncate text-xs text-laurelLeaf">{n.subtitle}</p>
+                </div>
+                <span className="w-36 shrink-0 text-xs text-laurelLeaf">{n.recipientName}</span>
+                <Badge label={CATEGORY_LABEL[n.category] ?? n.category} tone={CATEGORY_TONE[n.category] ?? 'neutral'} />
+                <span className="w-36 shrink-0 text-right text-xs text-laurelLeaf">{formatDateTime(n.createdAt)}</span>
               </div>
-              <span className="w-36 shrink-0 text-xs text-laurelLeaf">{audienceLabel[n.audience]}</span>
-              <span className="w-24 shrink-0 text-xs text-laurelLeaf">
-                {n.reach.toLocaleString('pt-BR')} alcance
-              </span>
-              <Badge label={statusLabel[n.status]} tone={statusTone[n.status]} />
-              <span className="w-36 shrink-0 text-right text-xs text-laurelLeaf">{n.date}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   )
