@@ -197,6 +197,13 @@ export function ChatPage() {
                               : 'bg-ceilingWhite text-richBlack'
                         }`}
                       >
+                        {m.imageUrl && (
+                          <img
+                            src={m.imageUrl}
+                            alt="Anexo enviado pelo usuário"
+                            className="mb-2 max-h-64 rounded-md object-cover"
+                          />
+                        )}
                         {m.message}
                         <div className={`mt-1 text-[10px] ${m.sender === 'staff' ? 'text-richBlack/60' : 'text-laurelLeaf'}`}>
                           {formatDateTime(m.createdAt)}

@@ -23,6 +23,7 @@ interface ApiMessageRow {
   sender: 'user' | 'staff'
   staff_id: string | null
   message: string
+  image_url: string | null
   created_at: string
 }
 
@@ -32,6 +33,7 @@ export interface ChatMessage {
   sender: 'user' | 'staff'
   staffId: string | null
   message: string
+  imageUrl: string | null
   createdAt: string
 }
 
@@ -52,6 +54,7 @@ function mapMessage(row: ApiMessageRow): ChatMessage {
     sender: row.sender,
     staffId: row.staff_id,
     message: row.message,
+    imageUrl: row.image_url,
     createdAt: row.created_at,
   }
 }
