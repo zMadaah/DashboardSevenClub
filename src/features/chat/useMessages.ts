@@ -8,7 +8,13 @@ import { getMessages, sendStaffMessage, updateTicketStatus, ChatMessage } from '
 // sensação de "chegou na hora" sem precisar de infraestrutura de tempo
 // real. Intervalo menor que o da lista de tickets porque, com a
 // conversa aberta, uma resposta demorada é mais perceptível.
-const POLL_INTERVAL_MS = 3000
+// 8s em vez de 3s — 3s gerava 20 requisições por minuto só desse
+// polling, por CADA ticket de chat aberto simultaneamente. Numa rede
+// compartilhada (Wi-Fi de escritório, por exemplo), isso somado a
+// outras chamadas do dashboard bastava pra estourar o rate limit
+// global da API (100 req/min por IP) mesmo sem culpa de quem estava
+// testando o app ao mesmo tempo na mesma rede.
+const POLL_INTERVAL_MS = 8000
 
 // Mensagem que o usuário vê no app quando o staff encerra o atendimento
 // (por "/finalizar" ou pelo botão). Deixa claro que dá pra reabrir só
