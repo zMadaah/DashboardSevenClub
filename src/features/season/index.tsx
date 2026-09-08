@@ -73,7 +73,7 @@ export function SeasonPage() {
         ) : season ? (
           <div className="flex items-center gap-4">
             <div className={`flex h-12 w-12 items-center justify-center rounded-full ${dark ? 'bg-richBlack' : 'bg-ceilingWhite'}`}>
-              <Calendar size={20} className="text-pear" />
+              <Calendar size={20} className="text-richBlack" />
             </div>
             <div>
               <h2 className={`text-base font-semibold ${textPrimary}`}>{season.name}</h2>

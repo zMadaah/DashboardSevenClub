@@ -11,6 +11,7 @@ import { useRecentPayments } from './useRecentPayments'
 import { useTheme } from '../../theme/ThemeContext'
 import { usersByRegion } from './mocks'
 
+
 // Anti-cheat ainda não tem API real (tem tabela, mas a rota nunca foi
 // construída) — único card que continua "Em breve" fixo. Pagamentos,
 // receita, status de assinatura e últimos pagamentos já são reais desde
@@ -144,7 +145,7 @@ export function HomePage() {
                           <span className="text-xs text-laurelLeaf">{p.gateway}</span>
                         </div>
                       </div>
-                      <span className="text-sm font-medium text-pear">
+                      <span className="text-sm font-medium text-richBlack">
                         +R$ {p.amount.toFixed(2).replace('.', ',')}
                       </span>
                     </div>

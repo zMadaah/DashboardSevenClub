@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from './AuthContext'
+import sevenClubLogo from '../assets/play_store_512.png';
 
 export function LoginPage() {
   const { isAuthenticated, isLoading, login } = useAuth()
@@ -10,7 +11,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-    const [logoError, setLogoError] = useState(false)
+  const [logoError, setLogoError] = useState(false)
 
   if (isLoading) {
     return (
@@ -48,18 +49,13 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-richBlack px-4">
       <div className="w-full max-w-sm rounded-xl border border-surfaceBorder bg-surface p-8 shadow-2xl">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
-          {logoError ? (
-            '7C'
-          ) : (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ceilingWhite text-sm font-bold text-richBlack">
             <img
-              src="/logo.jpg"
+              src={sevenClubLogo}
               alt="Seven Club"
               className="h-6 w-6 object-contain"
-              onError={() => setLogoError(true)}
             />
-          )}
-        </div>
+          </div>
           <div>
             <h1 className="text-lg font-semibold text-ceilingWhite">Seven Club</h1>
             <p className="text-sm text-laurelLeaf">Painel de suporte</p>

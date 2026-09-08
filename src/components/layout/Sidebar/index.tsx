@@ -19,7 +19,7 @@ import { useTickets } from '../../../features/chat/useTickets'
 import { useAuth } from '../../../auth/AuthContext'
 import { useTheme } from '../../../theme/ThemeContext'
 import { getInitials } from '../../../lib/format'
-
+import sevenClubLogo from '../../../assets/play_store_512.png'
 export function Sidebar() {
   const { tickets } = useTickets()
   const openChatsCount = tickets.filter((t) => t.status !== 'resolved').length
@@ -52,17 +52,12 @@ export function Sidebar() {
   return (
     <aside className={`flex w-60 shrink-0 flex-col px-3 py-4 ${dark ? 'bg-richBlack' : 'bg-white border-r border-celeste'}`}>
       <div className="mb-6 flex items-center gap-2 rounded-lg px-2 py-2">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pear text-sm font-bold text-richBlack">
-          {logoError ? (
-            '7C'
-          ) : (
-            <img
-              src="/logo.jpg"
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ceilingWhite text-sm font-bold text-richBlack">
+          <img
+              src={sevenClubLogo}
               alt="Seven Club"
               className="h-6 w-6 object-contain"
-              onError={() => setLogoError(true)}
             />
-          )}
         </div>
         <div className="flex flex-col leading-tight">
           <span className={`text-sm font-semibold ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>
@@ -152,10 +147,10 @@ export function Sidebar() {
             {user ? getInitials(user.name) : '?'}
           </div>
           <div className="flex flex-col items-start leading-tight">
-            <span className={`text-xs font-medium ${dark ? 'text-ceilingWhite' : 'text-richBlack'}`}>
+            <span className={`text-xs font-medium ${dark ? 'text- richBlack' : 'text-richBlack'}`}>
               {user?.name ?? 'Equipe de suporte'}
             </span>
-            <span className="text-[10px] text-laurelLeaf">{user?.email ?? ''}</span>
+            <span className="text-[10px] text-riche">{user?.email ?? ''}</span>
           </div>
           <ChevronsUpDown size={14} className="ml-auto text-laurelLeaf" />
         </button>
