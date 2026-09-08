@@ -11,7 +11,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [logoError, setLogoError] = useState(false)
+  // const [logoError, setLogoError] = useState(false)
 
   if (isLoading) {
     return (
