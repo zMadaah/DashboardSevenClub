@@ -25,8 +25,6 @@ export function LoginPage() {
     return <Navigate to="/" replace />
   }
 
-  // ...resto do componente sem mudanças
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 

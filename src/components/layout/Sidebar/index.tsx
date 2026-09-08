@@ -29,7 +29,7 @@ export function Sidebar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
   const dark = theme === 'dark'
-  const [logoError, setLogoError] = useState(false)
+ 
 
   function handleLogout() {
     logout()
